@@ -1,0 +1,11 @@
+{
+  "title": "基石符文",
+  "description": "在每局开始时从 15 个 LOL 基石符文遗物中选择一个，并将它们加入“基石遗物”图鉴栏。",
+  "visibility": "private",
+  "changeNote": "0.4.0: 适配 Slay the Spire 2 0.107.1，并更新 Workshop 封面。",
+  "tags": [
+    "gameplay",
+    "relics"
+  ],
+  "dependencies": []
+}

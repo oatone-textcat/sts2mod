@@ -1,6 +1,8 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Extensions;
@@ -26,12 +28,27 @@ public static class ModEntry
 {
 	private const string HarmonyId = "Natsuki.KeystoneRunes";
 
+	private const string SelectionHandledPropertyName = nameof(Keystone_RelicBase.KeystoneRunes_SelectionHandled);
+
 	private readonly record struct PendingRuneSelection(Player Player, List<RelicModel> Options, uint ChoiceId, bool IsLocal);
 
 	private static Harmony? _harmony;
 
+	private static bool _initialized;
+
+	private static bool _selectionInProgress;
+
+	private static readonly ConditionalWeakTable<Player, KeystoneSelectionRuntimeState> _selectionStates = new();
+
 	public static void Initialize()
 	{
+		if (_initialized)
+		{
+			Log.Info($"[{ModInfo.Id}] Initialize skipped; hooks are already installed.");
+			return;
+		}
+
+		_initialized = true;
 		InjectSavedPropertyCaches();
 		RegisterModels();
 		Harmony harmony = _harmony ??= new Harmony(HarmonyId);
@@ -68,6 +85,7 @@ public static class ModEntry
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(Keystone_ArcaneCometRune));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(Keystone_DarkHarvestRune));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(Keystone_GlacialAugmentRune));
+		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(Keystone_TemporarySlowPower));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(Keystone_AftershockRune));
 		SavedPropertiesTypeCache.InjectTypeIntoCache(typeof(Keystone_GuardianRune));
 		EnsureSavedPropertyNetIdBitSize();
@@ -140,6 +158,15 @@ public static class ModEntry
 		harmony.Patch(
 			RequireMethod(typeof(NGame), "StartRun", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, typeof(RunState)),
 			postfix: new HarmonyMethod(typeof(ModEntry), nameof(StartRunPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(NGame), "LoadRun", BindingFlags.Instance | BindingFlags.Public, typeof(RunState), typeof(SerializableRoom)),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(LoadRunPostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(Player), nameof(Player.FromSerializable), BindingFlags.Static | BindingFlags.Public, typeof(SerializablePlayer)),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(PlayerFromSerializablePostfix)));
+		harmony.Patch(
+			RequireMethod(typeof(Player), nameof(Player.ToSerializable), BindingFlags.Instance | BindingFlags.Public),
+			postfix: new HarmonyMethod(typeof(ModEntry), nameof(PlayerToSerializablePostfix)));
 	}
 
 	private static void FinalizeStartingRelicsPostfix(RunManager __instance, ref Task __result)
@@ -171,51 +198,106 @@ public static class ModEntry
 	private static async Task StartRunAfterOriginal(Task original, RunState runState)
 	{
 		await original;
+		await EnsureKeystoneRunesSelectedForRun(runState, SelectionTrigger.NewRun);
+	}
 
-		NetGameType gameType = RunManager.Instance.NetService.Type;
-		if (gameType is NetGameType.Singleplayer or NetGameType.None)
+	private static void LoadRunPostfix(RunState runState, ref Task __result)
+	{
+		__result = LoadRunAfterOriginal(__result, runState);
+	}
+
+	private static async Task LoadRunAfterOriginal(Task original, RunState runState)
+	{
+		await original;
+		await EnsureKeystoneRunesSelectedForRun(runState, SelectionTrigger.LoadedRun);
+	}
+
+	private static async Task EnsureKeystoneRunesSelectedForRun(RunState runState, SelectionTrigger trigger)
+	{
+		if (_selectionInProgress)
 		{
-			foreach (Player player in runState.Players)
-			{
-				await EnsureKeystoneRuneSelected(player);
-			}
-
+			Log.Info($"[{ModInfo.Id}] Keystone selection skipped: another selection is already in progress.");
 			return;
 		}
 
-		await EnsureKeystoneRunesSelectedMultiplayer(runState.Players.ToList());
+		if (trigger == SelectionTrigger.LoadedRun && !ShouldPromptAfterLoadedRun(runState))
+		{
+			return;
+		}
+
+		_selectionInProgress = true;
+		try
+		{
+			NetGameType gameType = RunManager.Instance.NetService.Type;
+			if (gameType is NetGameType.Singleplayer or NetGameType.None)
+			{
+				foreach (Player player in runState.Players)
+				{
+					await EnsureKeystoneRuneSelected(player);
+				}
+			}
+			else
+			{
+				await EnsureKeystoneRunesSelectedMultiplayer(runState.Players.ToList());
+			}
+		}
+		finally
+		{
+			_selectionInProgress = false;
+		}
 	}
 
-	private static async Task EnsureKeystoneRunesSelectedMultiplayer(IReadOnlyList<Player> players)
+	private static bool ShouldPromptAfterLoadedRun(RunState runState)
+	{
+		if (runState.CurrentActIndex != 0 || runState.ActFloor > 1)
+		{
+			return false;
+		}
+
+		int historyEntryCount = runState.MapPointHistory.Sum(static history => history.Count);
+		if (historyEntryCount > 1)
+		{
+			return false;
+		}
+
+		if (CombatManager.Instance?.IsInProgress == true)
+		{
+			return false;
+		}
+
+		return runState.Players.Any(NeedsKeystoneSelection);
+	}
+
+	private static async Task<bool> EnsureKeystoneRunesSelectedMultiplayer(IReadOnlyList<Player> players)
 	{
 		RunManager runManager = RunManager.Instance;
 		RunState? runState = runManager.DebugOnlyGetState();
 		if (KeystoneAiTeammateCompat.IsAiTeammateLoopbackRun(runState))
 		{
-			await EnsureKeystoneRunesSelectedAiTeammateHostControlled(players);
-			return;
+			return await EnsureKeystoneRunesSelectedAiTeammateHostControlled(players);
 		}
 
 		IReadOnlyList<Player> orderedPlayers = players
 			.OrderBy(static player => player.NetId)
 			.ToList();
 
+		bool changed = false;
 		PlayerChoiceSynchronizer? synchronizer = await WaitForPlayerChoiceSynchronizerAsync(runManager);
 		if (synchronizer == null)
 		{
 			foreach (Player player in orderedPlayers)
 			{
-				await EnsureKeystoneRuneSelected(player);
+				changed |= await EnsureKeystoneRuneSelected(player);
 			}
 
-			return;
+			return changed;
 		}
 
 		List<PendingRuneSelection> pendingSelections = new();
 		foreach (Player player in orderedPlayers)
 		{
 			RemoveRunesFromGrabBags(player);
-			if (player.Relics.Any(ModInfo.IsKeystoneRelic))
+			if (!NeedsKeystoneSelection(player))
 			{
 				continue;
 			}
@@ -243,9 +325,20 @@ public static class ModEntry
 			for (int i = 0; i < pendingSelections.Count; i++)
 			{
 				PendingRuneSelection selection = pendingSelections[i];
-				RelicModel selectedRelic = selectedRelics[i] ?? selection.Options[0];
+				RelicModel? selectedRelic = selectedRelics[i];
+				if (selectedRelic == null)
+				{
+					MarkKeystoneSelectionHandled(selection.Player);
+					changed = true;
+					Log.Info($"[{ModInfo.Id}] Keystone selection skipped: player={selection.Player.NetId} choiceId={selection.ChoiceId}");
+					continue;
+				}
+
 				await RelicCmd.Obtain(selectedRelic, selection.Player);
+				MarkKeystoneSelectionHandled(selection.Player);
+				changed = true;
 			}
+			return changed;
 		}
 		finally
 		{
@@ -256,7 +349,7 @@ public static class ModEntry
 		}
 	}
 
-	private static async Task EnsureKeystoneRunesSelectedAiTeammateHostControlled(IReadOnlyList<Player> players)
+	private static async Task<bool> EnsureKeystoneRunesSelectedAiTeammateHostControlled(IReadOnlyList<Player> players)
 	{
 		Log.Info($"[{ModInfo.Id}][AITeammateCompat] Host-controlled keystone selection started.");
 		KeystoneAiTeammateCompat.TryGetHostPlayerId(out ulong hostPlayerId);
@@ -267,10 +360,11 @@ public static class ModEntry
 			.ThenBy(static player => player.NetId)
 			.ToList();
 
+		bool changed = false;
 		foreach (Player player in orderedPlayers)
 		{
 			RemoveRunesFromGrabBags(player);
-			if (player.Relics.Any(ModInfo.IsKeystoneRelic))
+			if (!NeedsKeystoneSelection(player))
 			{
 				continue;
 			}
@@ -286,21 +380,31 @@ public static class ModEntry
 			bool isAiPlayer = KeystoneAiTeammateCompat.IsAiPlayer(player);
 			string? titleOverride = isAiPlayer ? FormatAiTeammateSelectionTitle(player) : null;
 			RelicModel? selected = await SelectRuneWithLocalScreen(options, titleOverride);
-			selected ??= options[0];
+			if (selected == null)
+			{
+				MarkKeystoneSelectionHandled(player);
+				changed = true;
+				Log.Info($"[{ModInfo.Id}][AITeammateCompat] Host-controlled selection skipped: player={player.NetId} ai={isAiPlayer}");
+				continue;
+			}
+
 			await RelicCmd.Obtain(selected, player);
+			MarkKeystoneSelectionHandled(player);
+			changed = true;
 			Log.Info($"[{ModInfo.Id}][AITeammateCompat] Host-controlled obtained: player={player.NetId} ai={isAiPlayer} relic={(selected.CanonicalInstance?.Id ?? selected.Id).Entry}");
 		}
 
 		Log.Info($"[{ModInfo.Id}][AITeammateCompat] Host-controlled keystone selection complete.");
+		return changed;
 	}
 
-	private static async Task EnsureKeystoneRuneSelected(Player player)
+	private static async Task<bool> EnsureKeystoneRuneSelected(Player player)
 	{
 		RemoveRunesFromGrabBags(player);
 
-		if (player.Relics.Any(ModInfo.IsKeystoneRelic))
+		if (!NeedsKeystoneSelection(player))
 		{
-			return;
+			return false;
 		}
 
 		List<RelicModel> options = ModInfo.GetCanonicalRunes()
@@ -308,8 +412,16 @@ public static class ModEntry
 			.ToList();
 
 		RelicModel? selected = await SelectRune(player, options);
-		selected ??= options[0];
+		if (selected == null)
+		{
+			MarkKeystoneSelectionHandled(player);
+			Log.Info($"[{ModInfo.Id}] Keystone selection skipped: player={player.NetId}");
+			return true;
+		}
+
 		await RelicCmd.Obtain(selected, player);
+		MarkKeystoneSelectionHandled(player);
+		return true;
 	}
 
 	private static async Task<RelicModel?> SelectRune(Player player, IReadOnlyList<RelicModel> options)
@@ -449,9 +561,94 @@ public static class ModEntry
 		}
 	}
 
+	private static bool NeedsKeystoneSelection(Player player)
+	{
+		return !player.Relics.Any(ModInfo.IsKeystoneRelic) && !IsKeystoneSelectionHandled(player);
+	}
+
+	private static bool IsKeystoneSelectionHandled(Player player)
+	{
+		return _selectionStates.TryGetValue(player, out KeystoneSelectionRuntimeState? state) && state.Handled;
+	}
+
+	private static void MarkKeystoneSelectionHandled(Player player)
+	{
+		_selectionStates.GetOrCreateValue(player).Handled = true;
+	}
+
+	private static void PlayerFromSerializablePostfix(SerializablePlayer save, Player __result)
+	{
+		if (HasSelectionHandledMarker(save))
+		{
+			MarkKeystoneSelectionHandled(__result);
+		}
+	}
+
+	private static void PlayerToSerializablePostfix(Player __instance, SerializablePlayer __result)
+	{
+		if (IsKeystoneSelectionHandled(__instance))
+		{
+			AddSelectionHandledMarker(__result);
+		}
+	}
+
+	private static bool HasSelectionHandledMarker(SerializablePlayer save)
+	{
+		return (save.Deck?.Any(static card => HasSelectionHandledMarker(card.Props)) == true)
+			|| (save.Relics?.Any(static relic => HasSelectionHandledMarker(relic.Props)) == true);
+	}
+
+	private static bool HasSelectionHandledMarker(SavedProperties? props)
+	{
+		return props?.bools?.Any(static property => property.name == SelectionHandledPropertyName && property.value) == true;
+	}
+
+	private static void AddSelectionHandledMarker(SerializablePlayer save)
+	{
+		if (save.Deck?.FirstOrDefault() is SerializableCard card)
+		{
+			card.Props = AddSelectionHandledMarker(card.Props);
+			return;
+		}
+
+		if (save.Relics?.FirstOrDefault() is SerializableRelic relic)
+		{
+			relic.Props = AddSelectionHandledMarker(relic.Props);
+		}
+	}
+
+	private static SavedProperties AddSelectionHandledMarker(SavedProperties? props)
+	{
+		SavedProperties updatedProps = props ?? new SavedProperties();
+		updatedProps.bools ??= new List<SavedProperties.SavedProperty<bool>>();
+
+		for (int i = 0; i < updatedProps.bools.Count; i++)
+		{
+			if (updatedProps.bools[i].name == SelectionHandledPropertyName)
+			{
+				updatedProps.bools[i] = new SavedProperties.SavedProperty<bool>(SelectionHandledPropertyName, true);
+				return updatedProps;
+			}
+		}
+
+		updatedProps.bools.Add(new SavedProperties.SavedProperty<bool>(SelectionHandledPropertyName, true));
+		return updatedProps;
+	}
+
 	private static MethodInfo RequireMethod(Type type, string name, BindingFlags flags, params Type[] parameters)
 	{
 		return type.GetMethod(name, flags, binder: null, parameters, modifiers: null)
 			?? throw new InvalidOperationException($"Could not find required method {type.FullName}.{name}.");
+	}
+
+	private sealed class KeystoneSelectionRuntimeState
+	{
+		public bool Handled { get; set; }
+	}
+
+	private enum SelectionTrigger
+	{
+		NewRun,
+		LoadedRun
 	}
 }

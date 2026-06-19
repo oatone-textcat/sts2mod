@@ -35,6 +35,31 @@ public abstract class Keystone_RelicBase : RelicModel
 
 	protected override string BigIconPath => PackedIconPath;
 
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public bool KeystoneRunes_SelectionHandled { get; set; }
+
+#if STS2_106_OR_NEWER
+	public virtual Task AfterSideTurnStart(CombatSide side, TurnCombatState combatState)
+	{
+		return Task.CompletedTask;
+	}
+
+	public sealed override Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, TurnCombatState combatState)
+	{
+		return AfterSideTurnStart(side, combatState);
+	}
+
+	public virtual Task AfterTurnEnd(PlayerChoiceContext choiceContext, CombatSide side)
+	{
+		return Task.CompletedTask;
+	}
+
+	public sealed override Task AfterSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
+	{
+		return AfterTurnEnd(choiceContext, side);
+	}
+#endif
+
 	protected abstract string GetIconPath();
 
 	protected static int RoundToInt(decimal value)
@@ -52,6 +77,18 @@ public abstract class Keystone_RelicBase : RelicModel
 		return card != null && card.Owner == Owner && card.Type == CardType.Attack;
 	}
 
+	protected CardModel? TryFindOwnedCombatCard(SerializableCard? savedCard)
+	{
+		if (savedCard?.Id == null || Owner?.PlayerCombatState == null)
+		{
+			return null;
+		}
+
+		IEnumerable<CardModel> candidates = Owner.PlayerCombatState.PlayPile.Cards
+			.Concat(Owner.PlayerCombatState.AllCards);
+		return candidates.FirstOrDefault(card => IsSameSavedCard(card, savedCard));
+	}
+
 	protected int GetCurrentActBonus()
 	{
 		return Math.Max(1, (Owner?.RunState.CurrentActIndex ?? 0) + 1);
@@ -66,6 +103,14 @@ public abstract class Keystone_RelicBase : RelicModel
 			&& applier == Owner?.Creature
 			&& power is not ITemporaryPower;
 	}
+
+	private static bool IsSameSavedCard(CardModel card, SerializableCard savedCard)
+	{
+		SerializableCard current = card.ToSerializable();
+		return Equals(current.Id, savedCard.Id)
+			&& current.CurrentUpgradeLevel == savedCard.CurrentUpgradeLevel
+			&& Equals(current.Enchantment, savedCard.Enchantment);
+	}
 }
 
 public sealed class Keystone_ElectrocuteRune : Keystone_RelicBase
@@ -79,6 +124,10 @@ public sealed class Keystone_ElectrocuteRune : Keystone_RelicBase
 	private int _consecutiveHitsThisTurn;
 
 	private int _trackedTargetCombatId = -1;
+
+	private CardModel? _currentTrackedCard;
+
+	private bool _currentTrackedCardHadHit;
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedConsecutiveHitsThisTurn
@@ -105,7 +154,7 @@ public sealed class Keystone_ElectrocuteRune : Keystone_RelicBase
 		new DynamicVar("HpPercent", CurrentHpRatio * 100m)
 	];
 
-	public override bool ShowCounter => false;
+	public override bool ShowCounter => CombatManager.Instance?.IsInProgress == true && !IsCanonical;
 
 	public override int DisplayAmount => !IsCanonical ? _consecutiveHitsThisTurn : 0;
 
@@ -133,20 +182,41 @@ public sealed class Keystone_ElectrocuteRune : Keystone_RelicBase
 		return Task.CompletedTask;
 	}
 
-	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
+	public override Task BeforeCardPlayed(CardPlay cardPlay)
 	{
 		if (!IsOwnedCard(cardPlay.Card))
 		{
-			return;
+			return Task.CompletedTask;
 		}
 
-		if (!IsValidEnemyTargetedPlay(cardPlay))
+		_currentTrackedCard = cardPlay.Card;
+		_currentTrackedCardHadHit = false;
+		if (!IsPotentialElectrocuteCard(cardPlay.Card))
 		{
 			ResetTracking();
+		}
+
+		return Task.CompletedTask;
+	}
+
+	public override async Task AfterDamageGiven(
+		PlayerChoiceContext choiceContext,
+		Creature? dealer,
+		DamageResult result,
+		ValueProp props,
+		Creature target,
+		CardModel? cardSource)
+	{
+		if (!IsValidElectrocuteHit(dealer, result, props, target, cardSource))
+		{
 			return;
 		}
 
-		Creature target = cardPlay.Target!;
+		if (ReferenceEquals(cardSource, _currentTrackedCard))
+		{
+			_currentTrackedCardHadHit = true;
+		}
+
 		int targetCombatId = target.CombatId.HasValue ? checked((int)target.CombatId.Value) : -1;
 		if (_trackedTargetCombatId >= 0 && targetCombatId == _trackedTargetCombatId)
 		{
@@ -168,7 +238,7 @@ public sealed class Keystone_ElectrocuteRune : Keystone_RelicBase
 		ResetTracking();
 		Flash([target]);
 		await CreatureCmd.Damage(
-			context,
+			choiceContext,
 			target,
 			bonusDamage,
 			ValueProp.Unpowered | ValueProp.SkipHurtAnim,
@@ -176,10 +246,46 @@ public sealed class Keystone_ElectrocuteRune : Keystone_RelicBase
 			cardSource: null);
 	}
 
-	private bool IsValidEnemyTargetedPlay(CardPlay cardPlay)
+	public override Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
-		return cardPlay.Target is { Side: CombatSide.Enemy }
-			&& cardPlay.Card.TargetType == TargetType.AnyEnemy;
+		if (!IsOwnedCard(cardPlay.Card) || !ReferenceEquals(cardPlay.Card, _currentTrackedCard))
+		{
+			return Task.CompletedTask;
+		}
+
+		if (!_currentTrackedCardHadHit)
+		{
+			ResetTracking();
+		}
+
+		if (cardPlay.IsLastInSeries)
+		{
+			_currentTrackedCard = null;
+			_currentTrackedCardHadHit = false;
+		}
+
+		return Task.CompletedTask;
+	}
+
+	private bool IsValidElectrocuteHit(
+		Creature? dealer,
+		DamageResult result,
+		ValueProp props,
+		Creature target,
+		CardModel? cardSource)
+	{
+		return dealer == Owner?.Creature
+			&& target.Side == CombatSide.Enemy
+			&& result.TotalDamage > 0
+			&& !props.HasFlag(ValueProp.Unpowered)
+			&& IsPotentialElectrocuteCard(cardSource);
+	}
+
+	private bool IsPotentialElectrocuteCard(CardModel? card)
+	{
+		return card != null
+			&& IsOwnedCard(card)
+			&& card.TargetType == TargetType.AnyEnemy;
 	}
 
 	private void ResetTracking()
@@ -206,6 +312,10 @@ public sealed class Keystone_FirstStrikeRune : Keystone_RelicBase
 
 	private CardModel? _activeFirstAttackCard;
 
+	private SerializableCard? _savedTrackedFirstAttackCard;
+
+	private SerializableCard? _savedActiveFirstAttackCard;
+
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public bool SavedHasDuplicatedFirstAttack
 	{
@@ -221,6 +331,28 @@ public sealed class Keystone_FirstStrikeRune : Keystone_RelicBase
 		{
 			_firstTurnDamage = Math.Max(0, value);
 			InvokeDisplayAmountChanged();
+		}
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public SerializableCard? SavedTrackedFirstAttackCard
+	{
+		get => _trackedFirstAttackCard?.ToSerializable() ?? _savedTrackedFirstAttackCard;
+		set
+		{
+			_trackedFirstAttackCard = null;
+			_savedTrackedFirstAttackCard = value;
+		}
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public SerializableCard? SavedActiveFirstAttackCard
+	{
+		get => _activeFirstAttackCard?.ToSerializable() ?? _savedActiveFirstAttackCard;
+		set
+		{
+			_activeFirstAttackCard = null;
+			_savedActiveFirstAttackCard = value;
 		}
 	}
 
@@ -245,15 +377,18 @@ public sealed class Keystone_FirstStrikeRune : Keystone_RelicBase
 
 		_hasDuplicatedFirstAttack = true;
 		_trackedFirstAttackCard = card;
+		_savedTrackedFirstAttackCard = null;
 		Status = RelicStatus.Active;
 		return playCount + 1;
 	}
 
 	public override Task BeforeCardPlayed(CardPlay cardPlay)
 	{
+		ResolveSavedFirstAttackCards();
 		if (ReferenceEquals(cardPlay.Card, _trackedFirstAttackCard))
 		{
 			_activeFirstAttackCard = cardPlay.Card;
+			_savedActiveFirstAttackCard = null;
 		}
 
 		return Task.CompletedTask;
@@ -284,10 +419,13 @@ public sealed class Keystone_FirstStrikeRune : Keystone_RelicBase
 
 	public override Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
 	{
+		ResolveSavedFirstAttackCards();
 		if (ReferenceEquals(cardPlay.Card, _activeFirstAttackCard) && cardPlay.IsLastInSeries)
 		{
 			_trackedFirstAttackCard = null;
 			_activeFirstAttackCard = null;
+			_savedTrackedFirstAttackCard = null;
+			_savedActiveFirstAttackCard = null;
 		}
 
 		return Task.CompletedTask;
@@ -307,6 +445,7 @@ public sealed class Keystone_FirstStrikeRune : Keystone_RelicBase
 
 	private bool IsActiveFirstAttackDamage(CardModel? cardSource)
 	{
+		ResolveSavedFirstAttackCards();
 		if (!ReferenceEquals(cardSource, _activeFirstAttackCard))
 		{
 			return false;
@@ -339,12 +478,35 @@ public sealed class Keystone_FirstStrikeRune : Keystone_RelicBase
 		return started > finished;
 	}
 
+	private void ResolveSavedFirstAttackCards()
+	{
+		if (_trackedFirstAttackCard == null && _savedTrackedFirstAttackCard != null)
+		{
+			_trackedFirstAttackCard = TryFindOwnedCombatCard(_savedTrackedFirstAttackCard);
+			if (_trackedFirstAttackCard != null)
+			{
+				_savedTrackedFirstAttackCard = null;
+			}
+		}
+
+		if (_activeFirstAttackCard == null && _savedActiveFirstAttackCard != null)
+		{
+			_activeFirstAttackCard = TryFindOwnedCombatCard(_savedActiveFirstAttackCard);
+			if (_activeFirstAttackCard != null)
+			{
+				_savedActiveFirstAttackCard = null;
+			}
+		}
+	}
+
 	private void ResetTracking()
 	{
 		_hasDuplicatedFirstAttack = false;
 		_firstTurnDamage = 0;
 		_trackedFirstAttackCard = null;
 		_activeFirstAttackCard = null;
+		_savedTrackedFirstAttackCard = null;
+		_savedActiveFirstAttackCard = null;
 		Status = RelicStatus.Normal;
 		InvokeDisplayAmountChanged();
 	}
@@ -365,6 +527,8 @@ public sealed class Keystone_UndyingGraspRune : Keystone_RelicBase
 	private int _charges;
 
 	private CardModel? _lastTriggeredCard;
+
+	private SerializableCard? _savedLastTriggeredCard;
 
 	private bool _hasGainedMaxHpThisCombat;
 
@@ -391,6 +555,17 @@ public sealed class Keystone_UndyingGraspRune : Keystone_RelicBase
 	{
 		get => _hasGainedMaxHpThisCombat;
 		set => _hasGainedMaxHpThisCombat = value;
+	}
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public SerializableCard? SavedLastTriggeredCard
+	{
+		get => _lastTriggeredCard?.ToSerializable() ?? _savedLastTriggeredCard;
+		set
+		{
+			_lastTriggeredCard = null;
+			_savedLastTriggeredCard = value;
+		}
 	}
 
 	protected override IEnumerable<DynamicVar> CanonicalVars =>
@@ -432,9 +607,11 @@ public sealed class Keystone_UndyingGraspRune : Keystone_RelicBase
 
 	public override Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
+		ResolveSavedLastTriggeredCard();
 		if (ReferenceEquals(cardPlay.Card, _lastTriggeredCard))
 		{
 			_lastTriggeredCard = null;
+			_savedLastTriggeredCard = null;
 			return Task.CompletedTask;
 		}
 
@@ -468,6 +645,7 @@ public sealed class Keystone_UndyingGraspRune : Keystone_RelicBase
 		Creature target,
 		CardModel? cardSource)
 	{
+		ResolveSavedLastTriggeredCard();
 		if (_charges <= 0
 			|| dealer != Owner?.Creature
 			|| target.Side != CombatSide.Enemy
@@ -479,6 +657,7 @@ public sealed class Keystone_UndyingGraspRune : Keystone_RelicBase
 
 		_charges--;
 		_lastTriggeredCard = cardSource;
+		_savedLastTriggeredCard = null;
 		_cardsPlayedTowardCharge = 1;
 		RefreshVisualState();
 
@@ -507,11 +686,26 @@ public sealed class Keystone_UndyingGraspRune : Keystone_RelicBase
 		await CreatureCmd.Heal(owner.Creature, healAmount, playAnim: true);
 	}
 
+	private void ResolveSavedLastTriggeredCard()
+	{
+		if (_lastTriggeredCard != null || _savedLastTriggeredCard == null)
+		{
+			return;
+		}
+
+		_lastTriggeredCard = TryFindOwnedCombatCard(_savedLastTriggeredCard);
+		if (_lastTriggeredCard != null)
+		{
+			_savedLastTriggeredCard = null;
+		}
+	}
+
 	private void ResetTracking()
 	{
 		_cardsPlayedTowardCharge = 0;
 		_charges = 0;
 		_lastTriggeredCard = null;
+		_savedLastTriggeredCard = null;
 		_hasGainedMaxHpThisCombat = false;
 		RefreshVisualState();
 	}
@@ -591,23 +785,24 @@ public sealed class Keystone_ConquerorRune : Keystone_RelicBase
 	public override async Task AfterCardPlayed(PlayerChoiceContext context, CardPlay cardPlay)
 	{
 		if (!IsOwnedAttack(cardPlay.Card) || Owner?.Creature.CombatState?.CurrentSide != CombatSide.Player)
-		{
-			return;
-		}
+			{
+				return;
+			}
 
-		_attacksPlayedThisTurn++;
-		int targetStrength = Math.Min(_attacksPlayedThisTurn / AttacksPerStrength, MaxStrengthPerTurn);
-		while (_strengthGrantedThisTurn < targetStrength)
+			bool wasAtStrengthCap = _strengthGrantedThisTurn >= MaxStrengthPerTurn;
+			_attacksPlayedThisTurn++;
+			int targetStrength = Math.Min(_attacksPlayedThisTurn / AttacksPerStrength, MaxStrengthPerTurn);
+			while (_strengthGrantedThisTurn < targetStrength)
 		{
 			_strengthGrantedThisTurn++;
 			await Sts2Compat.ApplyPower<StrengthPower>(Owner!.Creature, 1m, Owner.Creature, cardPlay.Card);
-			Flash(Array.Empty<Creature>());
-		}
+				Flash(Array.Empty<Creature>());
+			}
 
-		if (_strengthGrantedThisTurn >= MaxStrengthPerTurn)
-		{
-			await CreatureCmd.Heal(Owner!.Creature, HealPerAttack, playAnim: true);
-		}
+			if (wasAtStrengthCap)
+			{
+				await CreatureCmd.Heal(Owner!.Creature, HealPerAttack, playAnim: true);
+			}
 
 		RefreshVisualState();
 	}
@@ -933,6 +1128,13 @@ public sealed class Keystone_PhaseRushRune : Keystone_RelicBase
 	private int _sameTypeStreakThisTurn;
 
 	private bool _triggeredThisTurn;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public CardType SavedLastPlayedType
+	{
+		get => _lastPlayedType;
+		set => _lastPlayedType = value;
+	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
 	public int SavedSameTypeStreakThisTurn
@@ -1334,7 +1536,22 @@ public sealed class Keystone_ArcaneCometRune : Keystone_RelicBase
 	}
 }
 
-public sealed class Keystone_TemporarySlowPower : PowerModel, ITemporaryPower
+public abstract class Keystone_PowerBase : PowerModel
+{
+#if STS2_106_OR_NEWER
+	public virtual Task AfterSideTurnStart(CombatSide side, TurnCombatState combatState)
+	{
+		return Task.CompletedTask;
+	}
+
+	public sealed override Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, TurnCombatState combatState)
+	{
+		return AfterSideTurnStart(side, combatState);
+	}
+#endif
+}
+
+public sealed class Keystone_TemporarySlowPower : Keystone_PowerBase, ITemporaryPower
 {
 	private bool _shouldIgnoreNextInstance;
 
@@ -1405,6 +1622,13 @@ public sealed class Keystone_GlacialAugmentRune : Keystone_RelicBase
 	private bool _triggeredThisTurn;
 
 	private bool _isApplyingBonusDebuff;
+
+	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
+	public bool SavedTriggeredThisTurn
+	{
+		get => _triggeredThisTurn;
+		set => _triggeredThisTurn = value;
+	}
 
 	protected override string GetIconPath() => ModInfo.GlacialAugmentIconPath;
 
@@ -1746,10 +1970,6 @@ public sealed class Keystone_DarkHarvestRune : Keystone_RelicBase
 
 	private bool _isApplyingHarvestBonus;
 
-	private CardModel? _pendingHarvestCard;
-
-	private int _pendingHarvestTargetCombatId = -1;
-
 	private HashSet<uint>? _harvestedTargetCombatIds;
 
 	private string _savedHarvestedTargetCombatIds = string.Empty;
@@ -1770,13 +1990,6 @@ public sealed class Keystone_DarkHarvestRune : Keystone_RelicBase
 	{
 		get => _usedBonusThisTurn;
 		set => _usedBonusThisTurn = value;
-	}
-
-	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
-	public int SavedPendingHarvestTargetCombatId
-	{
-		get => _pendingHarvestTargetCombatId;
-		set => _pendingHarvestTargetCombatId = value;
 	}
 
 	[SavedProperty(SerializationCondition.SaveIfNotTypeDefault)]
@@ -1825,47 +2038,6 @@ public sealed class Keystone_DarkHarvestRune : Keystone_RelicBase
 		return Task.CompletedTask;
 	}
 
-	public override Task BeforeCardPlayed(CardPlay cardPlay)
-	{
-		_pendingHarvestCard = null;
-		_pendingHarvestTargetCombatId = -1;
-
-		if (_souls <= 0
-			|| _usedBonusThisTurn
-			|| !cardPlay.IsFirstInSeries
-			|| !IsOwnedAttack(cardPlay.Card)
-			|| cardPlay.Target is not { Side: CombatSide.Enemy } target
-			|| !target.CombatId.HasValue)
-		{
-			return Task.CompletedTask;
-		}
-
-		uint targetCombatId = target.CombatId.Value;
-		if (HarvestedTargetCombatIds.Contains(targetCombatId))
-		{
-			return Task.CompletedTask;
-		}
-
-		if (target.CurrentHp * 2 <= target.MaxHp)
-		{
-			_pendingHarvestCard = cardPlay.Card;
-			_pendingHarvestTargetCombatId = checked((int)targetCombatId);
-		}
-
-		return Task.CompletedTask;
-	}
-
-	public override Task AfterCardPlayedLate(PlayerChoiceContext choiceContext, CardPlay cardPlay)
-	{
-		if (ReferenceEquals(cardPlay.Card, _pendingHarvestCard))
-		{
-			_pendingHarvestCard = null;
-			_pendingHarvestTargetCombatId = -1;
-		}
-
-		return Task.CompletedTask;
-	}
-
 	public override async Task AfterDamageGiven(
 		PlayerChoiceContext choiceContext,
 		Creature? dealer,
@@ -1886,22 +2058,18 @@ public sealed class Keystone_DarkHarvestRune : Keystone_RelicBase
 			|| _souls <= 0
 			|| dealer != Owner?.Creature
 			|| target.Side != CombatSide.Enemy
-			|| !ReferenceEquals(cardSource, _pendingHarvestCard)
 			|| !IsOwnedAttack(cardSource)
 			|| props.HasFlag(ValueProp.Unpowered)
 			|| !target.CombatId.HasValue
-			|| _pendingHarvestTargetCombatId != checked((int)target.CombatId.Value))
+			|| result.TotalDamage <= 0
+			|| !target.IsAlive
+			|| !WasTargetBelowHalfHpBeforeDamage(target, result))
 		{
 			return;
 		}
 
-		_pendingHarvestCard = null;
-		_pendingHarvestTargetCombatId = -1;
-
 		uint targetCombatId = target.CombatId.Value;
-		if (HarvestedTargetCombatIds.Contains(targetCombatId)
-			|| result.TotalDamage <= 0
-			|| !target.IsAlive)
+		if (HarvestedTargetCombatIds.Contains(targetCombatId))
 		{
 			return;
 		}
@@ -1930,8 +2098,6 @@ public sealed class Keystone_DarkHarvestRune : Keystone_RelicBase
 	private void ResetTurnTracking()
 	{
 		_usedBonusThisTurn = false;
-		_pendingHarvestCard = null;
-		_pendingHarvestTargetCombatId = -1;
 	}
 
 	private void ResetCombatTracking()
@@ -1952,6 +2118,12 @@ public sealed class Keystone_DarkHarvestRune : Keystone_RelicBase
 		List<uint> orderedIds = [.. HarvestedTargetCombatIds];
 		orderedIds.Sort();
 		_savedHarvestedTargetCombatIds = string.Join(",", orderedIds);
+	}
+
+	private static bool WasTargetBelowHalfHpBeforeDamage(Creature target, DamageResult result)
+	{
+		int hpBeforeDamage = target.CurrentHp + Math.Max(0, result.UnblockedDamage);
+		return hpBeforeDamage * 2 <= target.MaxHp;
 	}
 
 	private static HashSet<uint> DeserializeCombatIdSet(string? serialized)

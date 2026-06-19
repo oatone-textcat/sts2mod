@@ -10,8 +10,18 @@ internal static class ModInfo
 
 	public const string DisplayName = "基石符文";
 
-#if STS2_104_OR_NEWER
+#if STS2_107_1
+	public const string TargetGameVersion = "0.107.1";
+#elif STS2_107_OR_NEWER
+	public const string TargetGameVersion = "0.107.0";
+#elif STS2_106_OR_NEWER
+	public const string TargetGameVersion = "0.106.1";
+#elif STS2_105_OR_NEWER
+	public const string TargetGameVersion = "0.105.1";
+#elif STS2_104_OR_NEWER
 	public const string TargetGameVersion = "0.104.0";
+#elif STS2_103_3
+	public const string TargetGameVersion = "0.103.3";
 #else
 	public const string TargetGameVersion = "0.103.2";
 #endif
