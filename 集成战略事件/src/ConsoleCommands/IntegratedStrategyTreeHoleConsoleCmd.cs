@@ -83,7 +83,15 @@ public sealed class IntegratedStrategyTreeHoleConsoleCmd : AbstractConsoleCmd
 		string requested = args.FirstOrDefault()?.ToLowerInvariant() ?? RandomArgument;
 		if (requested == RandomArgument)
 		{
-			destination = RandomDestinations[issuingPlayer.PlayerRng.Rewards.NextInt(RandomDestinations.Length)];
+			RunState state = (RunState)issuingPlayer.RunState;
+			uint seed = IntegratedStrategyStableRng.CreateSeed(
+				state.Rng.Seed,
+				"integrated_strategy_debug_tree_hole_destination",
+				unchecked((uint)state.CurrentActIndex),
+				unchecked((uint)state.ActFloor),
+				IntegratedStrategyStableRng.HashCoord(state.CurrentMapCoord));
+			MegaCrit.Sts2.Core.Random.Rng rng = new(seed, "integrated_strategy_debug_tree_hole_destination");
+			destination = RandomDestinations[rng.NextInt(RandomDestinations.Length)];
 			error = string.Empty;
 			return true;
 		}

@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[node name="IsharmlaCorruptedHeartEncounter" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 2
+
+[node name="isharmla_piercer_suck" type="Marker2D" parent="."]
+position = Vector2(1045, 735)
+
+[node name="isharmla_piercer_pierce" type="Marker2D" parent="."]
+position = Vector2(1285, 735)
+
+[node name="isharmla" type="Marker2D" parent="."]
+position = Vector2(1545, 735)

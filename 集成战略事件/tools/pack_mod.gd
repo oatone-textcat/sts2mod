@@ -60,6 +60,12 @@ func _add_imported_project(packer: PCKPacker, import_project_root: String, mod_i
 	if err != OK:
 		return err
 
+	var root_compat := import_project_root.path_join("_root_compat")
+	if DirAccess.dir_exists_absolute(root_compat):
+		err = _add_imported_root_compat_tree(packer, root_compat, root_compat)
+		if err != OK:
+			return err
+
 	var imported_root := import_project_root.path_join(".godot/imported")
 	if DirAccess.dir_exists_absolute(imported_root):
 		err = _add_godot_import_tree(packer, imported_root, imported_root)
@@ -87,6 +93,29 @@ func _add_imported_mod_tree(packer: PCKPacker, mod_root: String, current_dir: St
 
 		var relative_path := source_path.trim_prefix(mod_root + "/")
 		var packed_path := "res://%s/%s" % [mod_id, relative_path]
+		var err := packer.add_file(packed_path, source_path)
+		if err != OK:
+			push_error("add_file failed for %s -> %s: %s" % [source_path, packed_path, err])
+			return err
+
+	return OK
+
+
+func _add_imported_root_compat_tree(packer: PCKPacker, root_compat: String, current_dir: String) -> int:
+	var dir := DirAccess.open(current_dir)
+	if dir == null:
+		push_error("Unable to open root compat dir: %s" % current_dir)
+		return ERR_CANT_OPEN
+
+	for subdir in dir.get_directories():
+		var err := _add_imported_root_compat_tree(packer, root_compat, current_dir.path_join(subdir))
+		if err != OK:
+			return err
+
+	for file_name in dir.get_files():
+		var source_path := current_dir.path_join(file_name)
+		var relative_path := source_path.trim_prefix(root_compat + "/")
+		var packed_path := "res://%s" % relative_path
 		var err := packer.add_file(packed_path, source_path)
 		if err != OK:
 			push_error("add_file failed for %s -> %s: %s" % [source_path, packed_path, err])

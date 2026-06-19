@@ -10,11 +10,13 @@ GAME_BIN="$GAME_APP/Contents/MacOS/Slay the Spire 2"
 MOD_DIR="$GAME_APP/Contents/MacOS/mods/$FILE_STEM"
 BASELIB_SRC="$GAME_APP/Contents/MacOS/BaseLib"
 BASELIB_MOD_DIR="$GAME_APP/Contents/MacOS/mods/BaseLib"
-BASELIB_RELEASE_ZIP="${BASELIB_RELEASE_ZIP:-/Users/iniad/Downloads/BaseLib.3.2.1.zip}"
-BASELIB_REQUIRED_VERSION="${BASELIB_REQUIRED_VERSION:-v3.2.1}"
+BASELIB_WORKSHOP_DIR="${BASELIB_WORKSHOP_DIR:-/Users/iniad/Library/Application Support/Steam/steamapps/workshop/content/2868840/3737335127/BaseLib}"
+BASELIB_RELEASE_ZIP="${BASELIB_RELEASE_ZIP:-/Users/iniad/Downloads/BaseLib.3.3.0.zip}"
+BASELIB_REQUIRED_VERSION="${BASELIB_REQUIRED_VERSION:-v3.3.0}"
 BUILD_OUT="$ROOT/src/bin/Release/net9.0"
 PROJECT_PATH="$ROOT/src/$FILE_STEM.csproj"
 IMPORT_PROJECT="$ROOT/.build/import_project"
+ROOT_COMPAT_SRC="$ROOT/assets_root_compat"
 DEFAULT_GODOT_EDITOR="$ROOT/../.tools/godot-4.5.1/Godot_mono.app/Contents/MacOS/Godot"
 if [[ -z "${GODOT_EDITOR:-}" && -x "$DEFAULT_GODOT_EDITOR" ]]; then
   GODOT_EDITOR="$DEFAULT_GODOT_EDITOR"
@@ -73,6 +75,11 @@ ensure_baselib() {
     return 0
   fi
 
+  if [[ -d "$BASELIB_WORKSHOP_DIR" ]] && baselib_has_required_version "$BASELIB_WORKSHOP_DIR/BaseLib.json"; then
+    install_baselib_from_dir "$BASELIB_WORKSHOP_DIR"
+    return 0
+  fi
+
   if [[ -f "$BASELIB_RELEASE_ZIP" ]]; then
     local tmp_dir
     tmp_dir="$(mktemp -d)"
@@ -99,7 +106,7 @@ ensure_baselib() {
     return 0
   fi
 
-  print -u2 "BaseLib $BASELIB_REQUIRED_VERSION is required. Put BaseLib.${BASELIB_REQUIRED_VERSION#v}.zip at $BASELIB_RELEASE_ZIP or set BASELIB_RELEASE_ZIP."
+  print -u2 "BaseLib $BASELIB_REQUIRED_VERSION is required. Subscribe to Workshop item 3737335127, put BaseLib.${BASELIB_REQUIRED_VERSION#v}.zip at $BASELIB_RELEASE_ZIP, or set BASELIB_WORKSHOP_DIR/BASELIB_RELEASE_ZIP."
   exit 1
 }
 
@@ -128,6 +135,9 @@ rm -rf "$MOD_DIR"
 mkdir -p "$IMPORT_PROJECT/$FILE_STEM"
 cp "$ROOT/tools/project.godot" "$IMPORT_PROJECT/project.godot"
 rsync -a --exclude "$FILE_STEM.json" "$ROOT/assets/" "$IMPORT_PROJECT/$FILE_STEM/"
+if [[ -d "$ROOT_COMPAT_SRC" ]]; then
+  rsync -a "$ROOT_COMPAT_SRC/" "$IMPORT_PROJECT/_root_compat/"
+fi
 clean_macos_metadata "$IMPORT_PROJECT"
 
 "$GODOT_EDITOR" --headless \

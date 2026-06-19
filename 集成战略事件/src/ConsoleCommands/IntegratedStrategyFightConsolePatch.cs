@@ -104,16 +104,40 @@ internal static class IntegratedStrategyFightConsoleAliases
 {
 	private const string ModPrefix = "INTEGRATEDSTRATEGYEVENTS-";
 	private static readonly ModelId EncounterCategory = new(ModelId.SlugifyCategory<EncounterModel>(), string.Empty);
+	private static readonly Dictionary<string, string> ExplicitAliases = new(StringComparer.OrdinalIgnoreCase)
+	{
+		["IZUMIK"] = "IZUMIK_ECOLOGICAL_FOUNTAIN_TEST_ENCOUNTER",
+		["IZUMIK_TEST"] = "IZUMIK_ECOLOGICAL_FOUNTAIN_TEST_ENCOUNTER",
+		["ECOLOGICAL_FOUNTAIN"] = "IZUMIK_ECOLOGICAL_FOUNTAIN_TEST_ENCOUNTER",
+		["IZUMIK_ECOLOGICAL_FOUNTAIN"] = "IZUMIK_ECOLOGICAL_FOUNTAIN_TEST_ENCOUNTER",
+		["IZUMIK_OFFSPRING"] = "IZUMIK_OFFSPRING_TEST_ENCOUNTER",
+		["IZUMIK_OFFSPRING_TEST"] = "IZUMIK_OFFSPRING_TEST_ENCOUNTER",
+		["ISHARMLA"] = "ISHARMLA_CORRUPTED_HEART_TEST_ENCOUNTER",
+		["ISHARMLA_TEST"] = "ISHARMLA_CORRUPTED_HEART_TEST_ENCOUNTER",
+		["CORRUPTED_HEART"] = "ISHARMLA_CORRUPTED_HEART_TEST_ENCOUNTER",
+		["ISHARMLA_CORRUPTED_HEART"] = "ISHARMLA_CORRUPTED_HEART_TEST_ENCOUNTER",
+		["FROSTNOVA"] = "FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER",
+		["FROSTNOVA_TEST"] = "FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER",
+		["FROST_NOVA"] = "FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER",
+		["FROST_NOVA_TEST"] = "FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER",
+		["FROST_NOVA_WINTER_SCAR"] = "FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER"
+	};
 
 	public static string Normalize(string entry)
 	{
 		string normalized = entry.ToUpperInvariant();
-		if (normalized.StartsWith(ModPrefix, StringComparison.Ordinal))
+		if (ExplicitAliases.TryGetValue(normalized, out string? alias))
 		{
-			return normalized;
+			return ResolveExistingEncounterEntry(alias);
 		}
 
-		if (ModelDb.GetByIdOrNull<EncounterModel>(WithEntry(normalized)) != null)
+		string existing = ResolveExistingEncounterEntry(normalized);
+		if (existing != normalized)
+		{
+			return existing;
+		}
+
+		if (normalized.StartsWith(ModPrefix, StringComparison.Ordinal))
 		{
 			return normalized;
 		}
@@ -144,6 +168,14 @@ internal static class IntegratedStrategyFightConsoleAliases
 				yield return unprefixed;
 			}
 		}
+
+		foreach (string alias in ExplicitAliases.Keys)
+		{
+			if (entries.Add(alias))
+			{
+				yield return alias;
+			}
+		}
 	}
 
 	public static string RemoveModPrefix(string entry)
@@ -156,5 +188,21 @@ internal static class IntegratedStrategyFightConsoleAliases
 	private static ModelId WithEntry(string entry)
 	{
 		return new ModelId(EncounterCategory.Category, entry);
+	}
+
+	private static string ResolveExistingEncounterEntry(string entry)
+	{
+		if (ModelDb.GetByIdOrNull<EncounterModel>(WithEntry(entry)) != null)
+		{
+			return entry;
+		}
+
+		if (entry.StartsWith(ModPrefix, StringComparison.Ordinal))
+		{
+			return entry;
+		}
+
+		string prefixed = ModPrefix + entry;
+		return ModelDb.GetByIdOrNull<EncounterModel>(WithEntry(prefixed)) == null ? entry : prefixed;
 	}
 }

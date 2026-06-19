@@ -9,7 +9,13 @@ internal static partial class IntegratedStrategyContentCatalog
 		typeof(UnfinishedFinalePower),
 		typeof(RedmarkEradicatorTacticsPower),
 		typeof(SaintguardShieldPower),
+		typeof(IzumikTransformationPower),
+		typeof(IzumikSurvivalPower),
+		typeof(SwarmAvatarPower),
+		typeof(IsharmlaRingingHexRestorePower),
 		typeof(LugalszargusDecisivePower),
-		typeof(HaranduhDecisivePower)
+		typeof(HaranduhDecisivePower),
+		typeof(SnowMonsterPower),
+		typeof(NonAttachmentPower)
 	];
 }

@@ -26,6 +26,7 @@ internal static partial class IntegratedStrategyContentCatalog
 		typeof(SleepingStatueEvent),
 		typeof(TimidThievesEvent),
 		typeof(SeabornScholarEvent),
+		typeof(OdeEvent),
 		typeof(KindlingSparkEvent),
 		typeof(SecretDoorEvent),
 		typeof(ForSurvivalEvent),
@@ -53,9 +54,13 @@ internal static partial class IntegratedStrategyContentCatalog
 		typeof(GlimpseEvent),
 		typeof(ShiftingCityEvent),
 		typeof(StoryToBeToldEvent),
+		typeof(TruthToBeToldEvent),
+		typeof(PrimordialDivergenceEvent),
 		typeof(VoidPortentEvent),
 		typeof(AnomalousReportEvent),
 		typeof(ChangeEvent),
+		typeof(BeginningEvent),
+		typeof(SublimationEvent),
 		typeof(ReconstructionEvent),
 		typeof(ExplorerSmallStepEvent)
 	];

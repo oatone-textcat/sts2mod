@@ -1,0 +1,47 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Core/Nodes/Combat/NCreatureVisuals.cs" id="1_script"]
+[ext_resource type="SpineSkeletonDataResource" path="res://IntegratedStrategyEvents/animations/monsters/arknights/syskad/enemy_2039_syskad_skel_data.tres" id="2_skel_data"]
+
+[node name="IsharmlaCorruptedHeartCreatureVisuals" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Visuals" type="SpineSprite" parent="." owner="."]
+unique_name_in_owner = true
+skeleton_data_res = ExtResource("2_skel_data")
+preview_skin = "Default"
+preview_animation = "Idle"
+position = Vector2(0, -35)
+scale = Vector2(-0.62, 0.62)
+
+[node name="Bounds" type="Control" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(-135, -380)
+size = Vector2(270, 380)
+
+[node name="IntentPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(0, -445)
+
+[node name="PhaseTwoBounds" type="Control" parent="." owner="."]
+position = Vector2(0, 0)
+size = Vector2(0, 0)
+
+[node name="Bounds" type="Control" parent="PhaseTwoBounds" owner="."]
+position = Vector2(-225, -520)
+size = Vector2(450, 520)
+
+[node name="IntentPos" type="Marker2D" parent="PhaseTwoBounds" owner="."]
+position = Vector2(0, -585)
+
+[node name="CenterPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(0, -255)
+
+[node name="OrbPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(0, -345)
+
+[node name="TalkPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(90, -445)

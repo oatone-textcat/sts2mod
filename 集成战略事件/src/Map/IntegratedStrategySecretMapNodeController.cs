@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Godot;
 using HarmonyLib;
 using IntegratedStrategyEvents.Events;
+using IntegratedStrategyEvents.Relics;
 using IntegratedStrategyEvents.TreeHoles;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Logging;
@@ -34,16 +35,6 @@ internal static class IntegratedStrategySecretMapNodeController
 	];
 
 	private static readonly ConditionalWeakTable<RunState, SecretNodeStore> SecretNodes = new();
-	private static readonly AccessTools.FieldRef<NNormalMapPoint, TextureRect> IconRef =
-		AccessTools.FieldRefAccess<NNormalMapPoint, TextureRect>("_icon");
-	private static readonly AccessTools.FieldRef<NNormalMapPoint, TextureRect> OutlineRef =
-		AccessTools.FieldRefAccess<NNormalMapPoint, TextureRect>("_outline");
-	private static readonly AccessTools.FieldRef<NNormalMapPoint, TextureRect> QuestIconRef =
-		AccessTools.FieldRefAccess<NNormalMapPoint, TextureRect>("_questIcon");
-	private static readonly AccessTools.FieldRef<NNormalMapPoint, Tween?> TweenRef =
-		AccessTools.FieldRefAccess<NNormalMapPoint, Tween?>("_tween");
-	private static readonly AccessTools.FieldRef<NMapPoint, Color> OutlineColorRef =
-		AccessTools.FieldRefAccess<NMapPoint, Color>("_outlineColor");
 	private static Texture2D? _secretIcon;
 	private static Texture2D? _secretOutline;
 
@@ -67,9 +58,15 @@ internal static class IntegratedStrategySecretMapNodeController
 
 	public static bool IsAtSecretNode(RunState state)
 	{
-		return state.CurrentMapCoord.HasValue &&
-			state.CurrentMapPoint is { PointType: MapPointType.Unknown } point &&
+		return TryGetCurrentUnknownMapPoint(state, out MapPoint point) &&
 			IsSecretNode(state, state.Map, state.CurrentActIndex, point.coord);
+	}
+
+	public static bool IsAtProphetHornSecretNode(RunState state)
+	{
+		return TryGetCurrentUnknownMapPoint(state, out MapPoint point) &&
+			TryGetProphetHornSecretNodeCoord(state, state.Map, state.CurrentActIndex, out MapCoord coord) &&
+			point.coord.Equals(coord);
 	}
 
 	public static bool IsAtSecretNodeCurrentRun()
@@ -94,8 +91,8 @@ internal static class IntegratedStrategySecretMapNodeController
 			return false;
 		}
 
-		TextureRect iconRect = IconRef(mapPointNode);
-		TextureRect outlineRect = OutlineRef(mapPointNode);
+			TextureRect iconRect = IntegratedStrategyMapReflectionCache.NormalMapPointIcon(mapPointNode);
+			TextureRect outlineRect = IntegratedStrategyMapReflectionCache.NormalMapPointOutline(mapPointNode);
 		iconRect.Texture = icon;
 		outlineRect.Texture = outline;
 		Vector2 center = GetIconContainerCenter(mapPointNode, iconRect);
@@ -112,7 +109,10 @@ internal static class IntegratedStrategySecretMapNodeController
 			return false;
 		}
 
-		ApplySecretNodeOpacity(mapPointNode, IconRef(mapPointNode), OutlineRef(mapPointNode));
+			ApplySecretNodeOpacity(
+				mapPointNode,
+				IntegratedStrategyMapReflectionCache.NormalMapPointIcon(mapPointNode),
+				IntegratedStrategyMapReflectionCache.NormalMapPointOutline(mapPointNode));
 		return true;
 	}
 
@@ -123,7 +123,11 @@ internal static class IntegratedStrategySecretMapNodeController
 			return false;
 		}
 
-		ApplySecretNodeOpacity(mapPointNode, IconRef(mapPointNode), OutlineRef(mapPointNode), highlighted);
+			ApplySecretNodeOpacity(
+				mapPointNode,
+				IntegratedStrategyMapReflectionCache.NormalMapPointIcon(mapPointNode),
+				IntegratedStrategyMapReflectionCache.NormalMapPointOutline(mapPointNode),
+				highlighted);
 		return true;
 	}
 
@@ -134,13 +138,14 @@ internal static class IntegratedStrategySecretMapNodeController
 			return false;
 		}
 
-		TextureRect iconRect = IconRef(mapPointNode);
-		TextureRect questIconRect = QuestIconRef(mapPointNode);
-		TextureRect outlineRect = OutlineRef(mapPointNode);
-		Tween? tween = TweenRef(mapPointNode);
-		tween?.Kill();
-		tween = mapPointNode.CreateTween().SetParallel();
-		TweenRef(mapPointNode) = tween;
+			TextureRect iconRect = IntegratedStrategyMapReflectionCache.NormalMapPointIcon(mapPointNode);
+			TextureRect questIconRect = IntegratedStrategyMapReflectionCache.NormalMapPointQuestIcon(mapPointNode);
+			TextureRect outlineRect = IntegratedStrategyMapReflectionCache.NormalMapPointOutline(mapPointNode);
+			ref Tween? tweenRef = ref IntegratedStrategyMapReflectionCache.NormalMapPointTween(mapPointNode);
+			Tween? tween = tweenRef;
+			tween?.Kill();
+			tween = mapPointNode.CreateTween().SetParallel();
+			tweenRef = tween;
 		tween.TweenProperty(iconRect, "scale", SecretMapHoverScale, 0.05);
 		tween.TweenProperty(questIconRect, "scale", SecretMapHoverScale, 0.05);
 		iconRect.Modulate = Colors.White;
@@ -157,13 +162,14 @@ internal static class IntegratedStrategySecretMapNodeController
 			return false;
 		}
 
-		TextureRect iconRect = IconRef(mapPointNode);
-		TextureRect questIconRect = QuestIconRef(mapPointNode);
-		TextureRect outlineRect = OutlineRef(mapPointNode);
-		Tween? tween = TweenRef(mapPointNode);
-		tween?.Kill();
-		tween = mapPointNode.CreateTween().SetParallel();
-		TweenRef(mapPointNode) = tween;
+			TextureRect iconRect = IntegratedStrategyMapReflectionCache.NormalMapPointIcon(mapPointNode);
+			TextureRect questIconRect = IntegratedStrategyMapReflectionCache.NormalMapPointQuestIcon(mapPointNode);
+			TextureRect outlineRect = IntegratedStrategyMapReflectionCache.NormalMapPointOutline(mapPointNode);
+			ref Tween? tweenRef = ref IntegratedStrategyMapReflectionCache.NormalMapPointTween(mapPointNode);
+			Tween? tween = tweenRef;
+			tween?.Kill();
+			tween = mapPointNode.CreateTween().SetParallel();
+			tweenRef = tween;
 		tween.TweenProperty(iconRect, "scale", Vector2.One, 0.5)
 			.SetEase(Tween.EaseType.Out)
 			.SetTrans(Tween.TransitionType.Cubic);
@@ -201,6 +207,31 @@ internal static class IntegratedStrategySecretMapNodeController
 		}
 
 		int desiredIndex = roomSet.eventsVisited % roomSet.events.Count;
+		if (IsAtProphetHornSecretNode(state))
+		{
+			if (IntegratedStrategyEventReplay.TryRestoreSavedCurrentEvent(
+					roomSet,
+					state,
+					static eventModel => eventModel is TruthToBeToldEvent,
+					"saved Prophet Horn secret node event"))
+			{
+				return true;
+			}
+
+			RoomSet.SwapToOrCreateAtIndex<EventModel, TruthToBeToldEvent>(roomSet.events, desiredIndex);
+			Log.Info($"{ModInfo.LogPrefix} Prophet Horn secret map node forced next event to TRUTH_TO_BE_TOLD.");
+			return true;
+		}
+
+		if (IntegratedStrategyEventReplay.TryRestoreSavedCurrentEvent(
+				roomSet,
+				state,
+				IntegratedStrategyEventReplay.IsTreeHoleEvent,
+				"saved secret node event"))
+		{
+			return true;
+		}
+
 		Type selectedType = SelectTreeHoleEventType(state);
 		SwapNextEvent(roomSet, desiredIndex, selectedType);
 		Log.Info(
@@ -232,6 +263,24 @@ internal static class IntegratedStrategySecretMapNodeController
 			IsSecretNode(state, state.Map, state.CurrentActIndex, point.coord);
 	}
 
+	private static bool TryGetCurrentUnknownMapPoint(RunState state, out MapPoint point)
+	{
+		point = null!;
+		if (!state.CurrentMapCoord.HasValue)
+		{
+			return false;
+		}
+
+		MapCoord coord = state.CurrentMapCoord.Value;
+		if (state.Map.GetPoint(coord) is not { PointType: MapPointType.Unknown } currentPoint)
+		{
+			return false;
+		}
+
+		point = currentPoint;
+		return true;
+	}
+
 	private static bool ShouldSkipMap(RunState state, ActMap map)
 	{
 		return IntegratedStrategyTreeHoleController.IsActive(state) ||
@@ -239,14 +288,25 @@ internal static class IntegratedStrategySecretMapNodeController
 			map is IntegratedStrategyEndlessFinaleActMap ||
 			map is IntegratedStrategyEternalDustFinaleActMap ||
 			map is IntegratedStrategyRadiantApexFinaleActMap ||
+			map is IntegratedStrategyCarefreeViharaFinaleActMap ||
+			map is IntegratedStrategyAbyssalJungleFinaleActMap ||
+			map is IntegratedStrategyProphetHornFragmentActMap ||
 			IntegratedStrategyTreeHoleController.IsCurrentTreeHoleMap(map) ||
 			IntegratedStrategyTreeHoleController.IsCurrentEndlessFinaleMap(map) ||
 			IntegratedStrategyTreeHoleController.IsCurrentEternalDustFinaleMap(map) ||
-			IntegratedStrategyTreeHoleController.IsCurrentRadiantApexFinaleMap(map);
+			IntegratedStrategyTreeHoleController.IsCurrentRadiantApexFinaleMap(map) ||
+			IntegratedStrategyTreeHoleController.IsCurrentCarefreeViharaFinaleMap(map) ||
+			IntegratedStrategyTreeHoleController.IsCurrentAbyssalJungleFinaleMap(map) ||
+			IntegratedStrategyTreeHoleController.IsCurrentProphetHornFragmentMap(map);
 	}
 
 	private static HashSet<MapCoord> SelectSecretNodeCoords(RunState state, ActMap map, int actIndex)
 	{
+		if (TryGetProphetHornSecretNodeCoord(state, map, actIndex, out MapCoord prophetHornCoord))
+		{
+			return [prophetHornCoord];
+		}
+
 		List<MapPoint> candidates = map.GetAllMapPoints()
 			.Where(static point => point.PointType == MapPointType.Unknown && point.CanBeModified)
 			.OrderBy(static point => point.coord.row)
@@ -266,31 +326,43 @@ internal static class IntegratedStrategySecretMapNodeController
 
 	private static Type SelectTreeHoleEventType(RunState state)
 	{
-		List<Type> unvisitedAllowedTypes = TreeHoleEventTypes
-			.Where(type => !state.VisitedEventIds.Contains(ModelDb.GetId(type)))
-			.ToList();
-		List<Type> candidates = unvisitedAllowedTypes.Count > 0
-			? unvisitedAllowedTypes
-			: TreeHoleEventTypes.ToList();
-		if (candidates.Count == 0)
+		MapCoord coord = state.CurrentMapCoord ?? default;
+		uint seed = IntegratedStrategyStableRng.CreateSeed(
+			state.Rng.Seed,
+			"integrated_strategy_secret_tree_hole_event",
+			unchecked((uint)state.CurrentActIndex),
+			IntegratedStrategyStableRng.HashCoord(coord));
+		Rng rng = new(seed, "integrated_strategy_secret_tree_hole_event");
+		Type[] candidates = TreeHoleEventTypes
+			.Where(eventType => !state.VisitedEventIds.Contains(ModelDb.GetId(eventType)))
+			.ToArray();
+
+		if (candidates.Length == 0)
 		{
-			candidates = [typeof(ForwardForestEvent)];
+			candidates = TreeHoleEventTypes;
 		}
 
-		MapCoord coord = state.CurrentMapCoord ?? default;
-		uint seed = unchecked(state.Rng.Seed ^
-			(uint)state.CurrentActIndex * 0x45d9f3bu ^
-			(uint)coord.col * 0x1f123bb5u ^
-			(uint)coord.row * 0x9e3779b9u);
-		Rng rng = new(seed, "integrated_strategy_secret_tree_hole_event");
-		return candidates[rng.NextInt(candidates.Count)];
+		return candidates[rng.NextInt(candidates.Length)];
 	}
 
 	private static uint CreateSecretNodeSeed(RunState state, int actIndex)
 	{
-		return unchecked(state.Rng.Seed ^
-			(uint)actIndex * 0x9e3779b9u ^
-			0x5ECA_E7u);
+		return IntegratedStrategyStableRng.CreateSeed(
+			state.Rng.Seed,
+			"integrated_strategy_secret_map_nodes",
+			unchecked((uint)actIndex));
+	}
+
+	private static bool TryGetProphetHornSecretNodeCoord(
+		RunState state,
+		ActMap map,
+		int actIndex,
+		out MapCoord coord)
+	{
+		coord = default;
+		return actIndex == ProphetHornRelic.TargetActIndex &&
+			ProphetHornRelic.IsActiveInRun(state) &&
+			ProphetHornActMap.TryGetSecretCoord(map, out coord);
 	}
 
 	private static void SwapNextEvent(RoomSet roomSet, int desiredIndex, Type selectedType)
@@ -298,6 +370,12 @@ internal static class IntegratedStrategySecretMapNodeController
 		if (selectedType == typeof(StoryToBeToldEvent))
 		{
 			RoomSet.SwapToOrCreateAtIndex<EventModel, StoryToBeToldEvent>(roomSet.events, desiredIndex);
+			return;
+		}
+
+		if (selectedType == typeof(TruthToBeToldEvent))
+		{
+			RoomSet.SwapToOrCreateAtIndex<EventModel, TruthToBeToldEvent>(roomSet.events, desiredIndex);
 			return;
 		}
 
@@ -391,9 +469,10 @@ internal static class IntegratedStrategySecretMapNodeController
 
 	private static void ApplySecretOutlineBaseOpacity(NNormalMapPoint mapPointNode, TextureRect outlineRect)
 	{
-		Color outlineColor = OutlineColorRef(mapPointNode);
-		outlineColor.A = 1f;
-		OutlineColorRef(mapPointNode) = outlineColor;
+			ref Color outlineColorRef = ref IntegratedStrategyMapReflectionCache.MapPointOutlineColor(mapPointNode);
+			Color outlineColor = outlineColorRef;
+			outlineColor.A = 1f;
+			outlineColorRef = outlineColor;
 
 		Color modulate = outlineRect.Modulate;
 		modulate.A = 1f;
@@ -437,6 +516,16 @@ internal static class IntegratedStrategySecretMapNodeController
 			return _coordsByAct.TryGetValue(actIndex, out HashSet<MapCoord>? coords) &&
 				coords.Contains(coord);
 		}
+	}
+}
+
+[HarmonyPatch(typeof(MegaCrit.Sts2.Core.Hooks.Hook), nameof(MegaCrit.Sts2.Core.Hooks.Hook.AfterMapGenerated))]
+internal static class IntegratedStrategyTreeHoleEarlyRestorePatch
+{
+	[HarmonyPriority(Priority.First)]
+	private static void Prefix(IRunState runState, ActMap map, int actIndex)
+	{
+		IntegratedStrategyTreeHoleController.TryRestoreSavedSessionForCurrentRun(map);
 	}
 }
 

@@ -6,6 +6,7 @@ internal static partial class IntegratedStrategyContentCatalog
 	[
 		.. EventTypes,
 		.. EventRelicTypes,
+		.. CardTypes,
 		.. EncounterTypes,
 		.. PowerTypes
 	];

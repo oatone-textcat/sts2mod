@@ -1,12 +1,15 @@
 using System.Reflection;
+using IntegratedStrategyEvents.Cards;
 using IntegratedStrategyEvents.Encounters;
 using IntegratedStrategyEvents.Events;
+using IntegratedStrategyEvents.Map;
 using IntegratedStrategyEvents.Relics;
 using IntegratedStrategyEvents.TreeHoles;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.RelicPools;
 using MegaCrit.Sts2.Core.Saves.Runs;
@@ -17,13 +20,16 @@ namespace IntegratedStrategyEvents;
 public static class ModEntry
 {
 	private static Harmony? HarmonyInstance;
+	private static bool CardPoolsRegistered;
 
 	public static void Initialize()
 	{
 		InjectSavedPropertyCaches();
 		RegisterRelics();
+		RegisterCards();
 		EnsureModelsRegisteredIfModelDbAlreadyInitialized();
 		HarmonyInstance ??= new Harmony(ModInfo.HarmonyId);
+		IntegratedStrategyMapReflectionCache.Validate();
 		IntegratedStrategyModelIdSerializationWarningHooks.Install(HarmonyInstance);
 		HarmonyInstance.PatchAll(Assembly.GetExecutingAssembly());
 		IntegratedStrategyEncounterLocalization.Install();
@@ -43,6 +49,24 @@ public static class ModEntry
 		foreach (Type relicType in IntegratedStrategyContentCatalog.EventRelicTypes)
 		{
 			ModHelper.AddModelToPool(typeof(EventRelicPool), relicType);
+		}
+	}
+
+	private static void RegisterCards()
+	{
+		if (CardPoolsRegistered)
+		{
+			return;
+		}
+
+		CardPoolsRegistered = true;
+		try
+		{
+			ModHelper.AddModelToPool(typeof(TokenCardPool), typeof(Frozen));
+		}
+		catch (InvalidOperationException ex)
+		{
+			Log.Warn($"{ModInfo.LogPrefix} Could not add Frozen to TokenCardPool: {ex.Message}");
 		}
 	}
 

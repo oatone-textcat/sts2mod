@@ -15,6 +15,10 @@ internal static class TreeHoleRunAccessor
 		AccessTools.Method(typeof(RunManager), "ClearScreens");
 	private static readonly MethodInfo? RunManagerFadeInMethod =
 		AccessTools.Method(typeof(RunManager), "FadeIn", [typeof(bool)]);
+	private static readonly MethodInfo? RunManagerExitCurrentRoomsMethod =
+		AccessTools.Method(typeof(RunManager), "ExitCurrentRooms");
+	private static readonly MethodInfo? RunManagerEnterRoomInternalMethod =
+		AccessTools.Method(typeof(RunManager), "EnterRoomInternal", [typeof(AbstractRoom), typeof(bool)]);
 	private static readonly MethodInfo? RunManagerWinRunMethod =
 		AccessTools.Method(typeof(RunManager), "WinRun");
 	private static readonly FieldInfo? ActRoomsField =
@@ -33,6 +37,25 @@ internal static class TreeHoleRunAccessor
 		{
 			await task;
 		}
+	}
+
+	public static async Task ExitCurrentRooms(RunManager runManager)
+	{
+		if (RunManagerExitCurrentRoomsMethod?.Invoke(runManager, null) is Task task)
+		{
+			await task;
+		}
+	}
+
+	public static async Task EnterRoomInternal(RunManager runManager, AbstractRoom room)
+	{
+		if (RunManagerEnterRoomInternalMethod?.Invoke(runManager, [room, false]) is Task task)
+		{
+			await task;
+			return;
+		}
+
+		await runManager.EnterRoom(room);
 	}
 
 	public static bool TryWinRun(RunManager runManager, out Task task)

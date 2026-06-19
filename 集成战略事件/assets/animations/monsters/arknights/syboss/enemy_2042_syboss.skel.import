@@ -1,0 +1,12 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+path="res://IntegratedStrategyEvents/_imported/enemy_2042_syboss.skel.spskel"
+
+[deps]
+
+source_file="res://IntegratedStrategyEvents/animations/monsters/arknights/syboss/enemy_2042_syboss.skel"
+dest_files=["res://IntegratedStrategyEvents/_imported/enemy_2042_syboss.skel.spskel"]
+
+[params]

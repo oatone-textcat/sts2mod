@@ -52,6 +52,30 @@ internal static class IntegratedStrategyTreeHoleMapScreenPatch
 		{
 			HideSpecialPoint(__instance, "_startingPointNode");
 			HideSpecialPaths(__instance, map.StartingMapPoint.coord);
+			return;
+		}
+
+		if (map is IntegratedStrategyCarefreeViharaFinaleActMap ||
+			IntegratedStrategyTreeHoleController.IsCurrentCarefreeViharaFinaleMap(map))
+		{
+			HideSpecialPoint(__instance, "_startingPointNode");
+			HideSpecialPaths(__instance, map.StartingMapPoint.coord);
+			return;
+		}
+
+		if (map is IntegratedStrategyAbyssalJungleFinaleActMap ||
+			IntegratedStrategyTreeHoleController.IsCurrentAbyssalJungleFinaleMap(map))
+		{
+			HideSpecialPoint(__instance, "_startingPointNode");
+			HideSpecialPaths(__instance, map.StartingMapPoint.coord);
+			return;
+		}
+
+		if (map is IntegratedStrategyProphetHornFragmentActMap ||
+			IntegratedStrategyTreeHoleController.IsCurrentProphetHornFragmentMap(map))
+		{
+			HideSpecialPoint(__instance, "_startingPointNode");
+			HideSpecialPaths(__instance, map.StartingMapPoint.coord);
 		}
 	}
 
@@ -62,9 +86,9 @@ internal static class IntegratedStrategyTreeHoleMapScreenPatch
 			return;
 		}
 
-		bossPoint.Position = new Vector2(760f, -520f);
+		bossPoint.Position = new Vector2(-80f, -520f);
 		bossPoint.Scale = Vector2.One * 2.5f;
-		bossPoint.ZIndex = 0;
+		bossPoint.ZIndex = 10;
 	}
 
 	private static void HideSpecialPoint(NMapScreen screen, string fieldName)
@@ -122,6 +146,21 @@ internal static class IntegratedStrategyTreeHoleMapOpenPatch
 		}
 
 		IntegratedStrategyTreeHoleController.TryRestoreCompletedCurrentRun();
+	}
+}
+
+[HarmonyPatch(typeof(RunManager), nameof(RunManager.ProceedFromTerminalRewardsScreen))]
+internal static class IntegratedStrategyTreeHoleTerminalRewardsProceedPatch
+{
+	private static void Postfix(ref Task __result)
+	{
+		__result = RestoreTreeHoleAfterTerminalProceed(__result);
+	}
+
+	private static async Task RestoreTreeHoleAfterTerminalProceed(Task proceedTask)
+	{
+		await proceedTask;
+		IntegratedStrategyTreeHoleController.TryRestoreCompletedCurrentRunAfterTerminalProceed();
 	}
 }
 

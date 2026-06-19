@@ -39,6 +39,7 @@ public sealed partial class GlimpseEvent : IntegratedStrategyEventModel
 
 	private Task EnterMysteriousTime()
 	{
+		Finish("CLEAR_SEABORN");
 		return IntegratedStrategyTreeHoleController.EnterFromEvent(OwnerOrThrow, TimeSliceActName);
 	}
 }

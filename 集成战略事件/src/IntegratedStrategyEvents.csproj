@@ -8,6 +8,7 @@
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <GameDataPath>/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app/Contents/Resources/data_sts2_macos_arm64</GameDataPath>
     <BaseLibHintPath>/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS/mods/BaseLib/BaseLib.dll</BaseLibHintPath>
+    <BaseLibHintPath Condition="!Exists('$(BaseLibHintPath)')">/Users/iniad/Library/Application Support/Steam/steamapps/workshop/content/2868840/3737335127/BaseLib/BaseLib.dll</BaseLibHintPath>
     <BaseLibHintPath Condition="!Exists('$(BaseLibHintPath)')">/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS/BaseLib/BaseLib.dll</BaseLibHintPath>
   </PropertyGroup>
 

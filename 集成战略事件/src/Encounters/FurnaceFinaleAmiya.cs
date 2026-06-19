@@ -32,6 +32,7 @@ public sealed class FurnaceFinaleAmiya : MonsterModel
 	public const string BlackCrownMoveId = "BLACK_CROWN_MOVE";
 
 	private const int InitialHp = 480;
+	private const int PhaseTwoHardenedShell = 120;
 	private const int EndDamage = 10;
 	private const int EndHits = 2;
 	private const int EndStrengthGain = 1;
@@ -182,6 +183,7 @@ public sealed class FurnaceFinaleAmiya : MonsterModel
 		await MonsterAnimationHelper.TriggerAnimWithFixedWait(Creature, ReviveEndTrigger, ReviveEndDelay);
 		await CreatureCmd.Heal(Creature, Creature.MaxHp);
 		Creature.GetPower<UnfinishedFinalePower>()?.DoRevive();
+		await PowerCmd.Apply<HardenedShellPower>(Creature, PhaseTwoHardenedShell, Creature, null);
 		CompleteSecondPhaseRevive();
 	}
 
@@ -231,14 +233,14 @@ public sealed class FurnaceFinaleAmiya : MonsterModel
 		statusCards.Add(await CardPileCmd.AddGeneratedCardToCombat(
 			CombatState.CreateCard<Soot>(player),
 			PileType.Draw,
-			addedByPlayer: false,
+			player,
 			CardPilePosition.Bottom));
 		for (int i = 0; i < SootDiscardCount; i++)
 		{
 			statusCards.Add(await CardPileCmd.AddGeneratedCardToCombat(
 				CombatState.CreateCard<Soot>(player),
 				PileType.Discard,
-				addedByPlayer: false,
+				player,
 				CardPilePosition.Bottom));
 		}
 

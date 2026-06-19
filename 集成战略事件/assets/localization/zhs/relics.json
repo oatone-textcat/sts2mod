@@ -43,5 +43,37 @@
 
   "TIME_AND_LIGHT_RELIC.title": "时与光",
   "TIME_AND_LIGHT_RELIC.description": "战斗开始时，获得[blue]1[/blue]点[gold]力量[/gold]。[red]让探索开启不同的方向。[/red]",
-  "TIME_AND_LIGHT_RELIC.flavor": "唤醒律法的第一声狂嚎。"
+  "TIME_AND_LIGHT_RELIC.flavor": "唤醒律法的第一声狂嚎。",
+
+  "PROPHET_HORN_RELIC.title": "先知长角",
+  "PROPHET_HORN_RELIC.description": "进入第三幕时，使所有路线汇聚向一个特殊的[sine][purple]秘境[/purple][/sine]节点。",
+  "PROPHET_HORN_RELIC.flavor": "征服神民与先民的并不是铳械，而是律法。很快，“提卡兹”这个词的意义超越了种族，而卡兹戴尔，也就此成为众生的家园。",
+
+  "PETAL_RELIC.title": "片瓣",
+  "PETAL_RELIC.description": "在第三幕刷新一个特殊的[red]战斗节点[/red]。",
+  "PETAL_RELIC.flavor": "了悟。",
+
+  "ANASA_KARMA_RELIC.title": "阿纳萨羯磨",
+  "ANASA_KARMA_RELIC.description": "[red]让探索开启不同的方向。[/red]",
+  "ANASA_KARMA_RELIC.flavor": "他的心性已变，他的利剑已碎，但身上的结晶无时无刻不在提醒着他，修行尚未结束。",
+
+  "BISHOP_RESEARCH_RELIC.title": "主教的研究",
+  "BISHOP_RESEARCH_RELIC.description": "[red]让探索开启不同的方向。[/red]",
+  "BISHOP_RESEARCH_RELIC.flavor": "这位主教毕生的研究几乎都留在了这些文件和笔记里，其中涉及了诸多逾越伦理道德的实验。在他的观念中，接触海嗣只是手段，最终的愿景，是让人类通过与海嗣融合进化为更强大的生物。",
+
+  "DEEP_BLUE_MEMORY_RELIC.title": "深蓝回忆",
+  "DEEP_BLUE_MEMORY_RELIC.description": "[red]让探索开启不同的方向。[/red]",
+  "DEEP_BLUE_MEMORY_RELIC.flavor": "即使你对实验室的研究内容只有丁点记忆，那也足以让你感到畏惧。或许在那个年代，为了生存，你，以及那些与你身份相同的人，都曾做过一些无法被饶恕的事。",
+
+  "DETERMINATION_RELIC.title": "“决心”",
+  "DETERMINATION_RELIC.description": "战斗开始时，获得[blue]2[/blue]点[gold]力量[/gold]和[blue]2[/blue]点[gold]敏捷[/gold]。每回合多抽[blue]2[/blue]张牌。",
+  "DETERMINATION_RELIC.flavor": "时至今日，水月的人性光辉仍未褪色，他作为人类接受了海嗣，也定能由海嗣重新化作人类。",
+
+  "OBSERVATION_RELIC.title": "“观望”",
+  "OBSERVATION_RELIC.description": "每回合多抽[blue]1[/blue]张牌。",
+  "OBSERVATION_RELIC.flavor": "水月对自己的认知并不偏向海嗣或是人类，他只是在做自己认为正确的事。",
+
+  "HESITATION_RELIC.title": "“犹疑”",
+  "HESITATION_RELIC.description": "没有任何作用。",
+  "HESITATION_RELIC.flavor": "水月的海嗣本能压过人性后产生自我怀疑的具象表征。只要这种身份认知还不明晰，就仍会对水月造成不良影响。"
 }

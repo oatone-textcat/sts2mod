@@ -1,4 +1,5 @@
 using IntegratedStrategyEvents.TreeHoles;
+using IntegratedStrategyEvents.Map;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Map;
@@ -41,12 +42,26 @@ internal static partial class IntegratedStrategyEventSpawnRules
 			[typeof(GlimpseEvent)] = static _ => false,
 			[typeof(ShiftingCityEvent)] = static _ => false,
 			[typeof(StoryToBeToldEvent)] = static _ => false,
+			[typeof(TruthToBeToldEvent)] = static runState =>
+				runState is RunState state &&
+				IntegratedStrategySecretMapNodeController.IsAtProphetHornSecretNode(state),
 			[typeof(VoidPortentEvent)] = static runState =>
 				IsSecondActOpeningBranchAvailable(runState),
 			[typeof(ChangeEvent)] = static runState =>
 				IsSecondActOpeningBranchAvailable(runState),
-			[typeof(AnomalousReportEvent)] = static runState =>
+			[typeof(PrimordialDivergenceEvent)] = static runState =>
 				IsSecondActOpeningBranchAvailable(runState),
+			[typeof(AnomalousReportEvent)] = static runState =>
+				runState is RunState state &&
+				IntegratedStrategyTreeHoleController.IsAtProphetHornFragmentEventPoint(state),
+			[typeof(BeginningEvent)] = static runState =>
+				IsSecondActOpeningBranchAvailable(runState),
+			[typeof(SublimationEvent)] = static runState =>
+				runState is RunState state &&
+				IntegratedStrategyTreeHoleController.IsAtAbyssalJungleSublimationEventPoint(state),
+			[typeof(OdeEvent)] = static runState =>
+				runState is RunState state &&
+				IntegratedStrategyTreeHoleController.IsAtAbyssalJungleOdeEventPoint(state),
 			[typeof(ReconstructionEvent)] = static runState =>
 				runState is RunState state &&
 				IntegratedStrategyTreeHoleController.IsAtEternalDustFirstEventPoint(state),

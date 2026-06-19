@@ -38,6 +38,7 @@ public sealed partial class StoryToBeToldEvent : IntegratedStrategyEventModel
 
 	private Task EnterStrangeFragment()
 	{
+		Finish("COMPLETE_FLAW");
 		return IntegratedStrategyTreeHoleController.EnterFromEvent(
 			OwnerOrThrow,
 			StrangeFragmentActName,

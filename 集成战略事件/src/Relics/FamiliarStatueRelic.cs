@@ -31,13 +31,14 @@ public sealed class FamiliarStatueRelic : IntegratedStrategyEventRelic
 		return Task.CompletedTask;
 	}
 
-	public override Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	public override Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
 	{
 		Player? owner = Owner;
 		if (_appliedThisCombat
 				|| owner == null
 				|| owner.Creature.IsDead
 				|| side != CombatSide.Player
+				|| !participants.Contains(owner.Creature)
 				|| combatState.RoundNumber != 1)
 		{
 			return Task.CompletedTask;

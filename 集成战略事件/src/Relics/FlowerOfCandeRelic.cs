@@ -14,10 +14,13 @@ public sealed class FlowerOfCandeRelic : IntegratedStrategyEventRelic
 	{
 	}
 
-	public override Task AfterSideTurnStart(CombatSide side, CombatState combatState)
+	public override Task AfterSideTurnStart(CombatSide side, IReadOnlyList<Creature> participants, ICombatState combatState)
 	{
 		Player? owner = Owner;
-		if (owner == null || owner.Creature.IsDead || side != CombatSide.Player)
+		if (owner == null ||
+			owner.Creature.IsDead ||
+			side != CombatSide.Player ||
+			!participants.Contains(owner.Creature))
 		{
 			return Task.CompletedTask;
 		}

@@ -113,7 +113,7 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 			return;
 		}
 
-		CombatState? combatState = Owner.Creature.CombatState;
+		ICombatState? combatState = Owner.Creature.CombatState;
 		if (combatState == null)
 		{
 			return;
@@ -303,18 +303,18 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 			&& creature.Monster is FinalChorale;
 	}
 
-	private static ProphecyProjectionRelic? GetChoraleAuthority(CombatState combatState)
+	private static ProphecyProjectionRelic? GetChoraleAuthority(ICombatState combatState)
 	{
 		return GetActiveProjectionRelics(combatState)
 			.FirstOrDefault(static projection => !projection._choraleDefeated && projection._choraleHp > 0);
 	}
 
-	private static ProphecyProjectionRelic? GetRewardAuthority(CombatState combatState)
+	private static ProphecyProjectionRelic? GetRewardAuthority(ICombatState combatState)
 	{
 		return GetActiveProjectionRelics(combatState).FirstOrDefault();
 	}
 
-	private static IEnumerable<ProphecyProjectionRelic> GetActiveProjectionRelics(CombatState combatState)
+	private static IEnumerable<ProphecyProjectionRelic> GetActiveProjectionRelics(ICombatState combatState)
 	{
 		foreach (Player player in combatState.Players)
 		{
@@ -335,12 +335,12 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 		}
 	}
 
-	private static Creature? FindExistingChorale(CombatState combatState)
+	private static Creature? FindExistingChorale(ICombatState combatState)
 	{
 		return combatState.Enemies.FirstOrDefault(static creature => creature.Monster is FinalChorale);
 	}
 
-	private static void SynchronizeSharedChoraleState(CombatState combatState)
+	private static void SynchronizeSharedChoraleState(ICombatState combatState)
 	{
 		List<ProphecyProjectionRelic> projections = GetActiveProjectionRelics(combatState).ToList();
 		if (projections.Count == 0)
@@ -371,13 +371,13 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 		}
 	}
 
-	private static int GetSharedChoraleHp(CombatState combatState)
+	private static int GetSharedChoraleHp(ICombatState combatState)
 	{
 		return GetSharedChoraleHp(combatState, GetActiveProjectionRelics(combatState).ToList());
 	}
 
 	private static int GetSharedChoraleHp(
-		CombatState combatState,
+		ICombatState combatState,
 		IReadOnlyCollection<ProphecyProjectionRelic> projections)
 	{
 		if (projections.Any(static projection => projection._choraleDefeated))
@@ -394,7 +394,7 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 		return savedHp > 0 ? savedHp : initialHp;
 	}
 
-	private static void SetSharedChoraleHp(CombatState combatState, int value)
+	private static void SetSharedChoraleHp(ICombatState combatState, int value)
 	{
 		int hp = Math.Max(0, value);
 		foreach (ProphecyProjectionRelic projection in GetActiveProjectionRelics(combatState))
@@ -403,7 +403,7 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 		}
 	}
 
-	private static void SetSharedChoraleDefeated(CombatState combatState)
+	private static void SetSharedChoraleDefeated(ICombatState combatState)
 	{
 		foreach (ProphecyProjectionRelic projection in GetActiveProjectionRelics(combatState))
 		{
@@ -413,7 +413,7 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 		}
 	}
 
-	private static void SetSharedChoraleRewardsGranted(CombatState combatState)
+	private static void SetSharedChoraleRewardsGranted(ICombatState combatState)
 	{
 		foreach (ProphecyProjectionRelic projection in GetActiveProjectionRelics(combatState))
 		{
@@ -423,7 +423,7 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 
 	private int GetInitialChoraleHpForOwner()
 	{
-		if (Owner?.Creature.CombatState is CombatState combatState)
+		if (Owner?.Creature.CombatState is ICombatState combatState)
 		{
 			return GetInitialChoraleHp(combatState);
 		}
@@ -459,7 +459,7 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 		return _choraleHp;
 	}
 
-	private static int GetInitialChoraleHp(CombatState combatState)
+	private static int GetInitialChoraleHp(ICombatState combatState)
 	{
 		return GetInitialChoraleHp(combatState.RunState, combatState.Encounter);
 	}
@@ -474,7 +474,7 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 			actIndex);
 	}
 
-	private static bool HasLivingPrimaryEnemy(CombatState? combatState)
+	private static bool HasLivingPrimaryEnemy(ICombatState? combatState)
 	{
 		return combatState?.Enemies.Any(static enemy => enemy.IsAlive && enemy.IsPrimaryEnemy) == true;
 	}

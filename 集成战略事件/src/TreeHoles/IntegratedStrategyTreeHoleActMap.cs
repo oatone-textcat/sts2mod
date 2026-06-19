@@ -84,6 +84,7 @@ internal sealed class IntegratedStrategyTreeHoleActMap : ActMap
 			point.AddChildPoint(terminal);
 		}
 
+		terminal.AddChildPoint(BossMapPoint);
 		_terminalCoord = terminal.coord;
 	}
 

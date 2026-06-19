@@ -42,6 +42,7 @@ public sealed partial class ShiftingCityEvent : IntegratedStrategyEventModel
 
 	private Task EnterStrangeFragment()
 	{
+		Finish("UNDERSTAND_CITY");
 		return IntegratedStrategyTreeHoleController.EnterFromEvent(
 			OwnerOrThrow,
 			StrangeFragmentActName,

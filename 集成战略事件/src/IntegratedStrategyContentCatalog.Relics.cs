@@ -16,6 +16,14 @@ internal static partial class IntegratedStrategyContentCatalog
 		typeof(ProphecyProjectionRelic),
 		typeof(EndlessKeyRelic),
 		typeof(DimensionalFluidRelic),
-		typeof(TimeAndLightRelic)
+		typeof(TimeAndLightRelic),
+		typeof(ProphetHornRelic),
+		typeof(PetalRelic),
+		typeof(AnasaKarmaRelic),
+		typeof(BishopResearchRelic),
+		typeof(DeepBlueMemoryRelic),
+		typeof(DeterminationRelic),
+		typeof(ObservationRelic),
+		typeof(HesitationRelic)
 	];
 }

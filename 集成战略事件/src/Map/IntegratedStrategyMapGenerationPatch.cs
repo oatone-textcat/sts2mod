@@ -27,35 +27,83 @@ internal static class IntegratedStrategyMapLengthPatch
 internal static class IntegratedStrategyFirstEventPatch
 {
 	private const int SecondActIndex = 1;
-	private const int FirstEventBranchCount = 3;
+	private const int FirstEventBranchCount = 4;
 	private static readonly ConditionalWeakTable<RunState, FirstEventChoice> FirstEventChoices = new();
 
-	private static void Prefix(RoomSet __instance, RunState runState)
+	private static bool Prefix(RoomSet __instance, RunState runState)
 	{
 		if (__instance.events.Count == 0)
 		{
-			return;
+			return true;
+		}
+
+		if (IntegratedStrategyTreeHoleController.IsAtProphetHornFragmentEventPoint(runState))
+		{
+			if (!IntegratedStrategyEventReplay.TryRestoreSavedCurrentEvent(
+					__instance,
+					runState,
+					static eventModel => eventModel is AnomalousReportEvent,
+					"saved prophet horn fragment event"))
+			{
+				int anomalousReportIndex = __instance.eventsVisited % __instance.events.Count;
+				RoomSet.SwapToOrCreateAtIndex<EventModel, AnomalousReportEvent>(__instance.events, anomalousReportIndex);
+			}
+
+			return false;
+		}
+
+		if (IntegratedStrategyTreeHoleController.IsActive(runState) &&
+			IntegratedStrategyEventReplay.TryRestoreSavedCurrentEvent(
+				__instance,
+				runState,
+				static _ => true,
+				"saved temporary-map event"))
+		{
+			return false;
+		}
+
+		if (IntegratedStrategyEventReplay.TryRestoreSavedCurrentEvent(
+				__instance,
+				runState,
+				IntegratedStrategyEventReplay.IsAnyManagedForcedEvent,
+				"saved forced event"))
+		{
+			return false;
 		}
 
 		if (IntegratedStrategyTreeHoleController.IsAtEternalDustFirstEventPoint(runState))
 		{
 			int reconstructionIndex = __instance.eventsVisited % __instance.events.Count;
 			RoomSet.SwapToOrCreateAtIndex<EventModel, ReconstructionEvent>(__instance.events, reconstructionIndex);
-			return;
+			return false;
 		}
 
 		if (IntegratedStrategyTreeHoleController.IsAtEternalDustSecondEventPoint(runState))
 		{
 			int explorerStepIndex = __instance.eventsVisited % __instance.events.Count;
 			RoomSet.SwapToOrCreateAtIndex<EventModel, ExplorerSmallStepEvent>(__instance.events, explorerStepIndex);
-			return;
+			return false;
+		}
+
+		if (IntegratedStrategyTreeHoleController.IsAtAbyssalJungleSublimationEventPoint(runState))
+		{
+			int sublimationIndex = __instance.eventsVisited % __instance.events.Count;
+			RoomSet.SwapToOrCreateAtIndex<EventModel, SublimationEvent>(__instance.events, sublimationIndex);
+			return false;
+		}
+
+		if (IntegratedStrategyTreeHoleController.IsAtAbyssalJungleOdeEventPoint(runState))
+		{
+			int odeIndex = __instance.eventsVisited % __instance.events.Count;
+			RoomSet.SwapToOrCreateAtIndex<EventModel, OdeEvent>(__instance.events, odeIndex);
+			return false;
 		}
 
 		if (runState.CurrentActIndex != SecondActIndex ||
 			IntegratedStrategyTreeHoleController.IsActive(runState) ||
 			HasVisitedOrdinaryEventInCurrentAct(runState))
 		{
-			return;
+			return true;
 		}
 
 		int desiredIndex = __instance.eventsVisited % __instance.events.Count;
@@ -66,21 +114,33 @@ internal static class IntegratedStrategyFirstEventPatch
 		if (choice.Branch == FirstEventBranch.Change)
 		{
 			RoomSet.SwapToOrCreateAtIndex<EventModel, ChangeEvent>(__instance.events, desiredIndex);
-			return;
+			return false;
 		}
 
-		if (choice.Branch == FirstEventBranch.AnomalousReport)
+		if (choice.Branch == FirstEventBranch.PrimordialDivergence)
 		{
-			RoomSet.SwapToOrCreateAtIndex<EventModel, AnomalousReportEvent>(__instance.events, desiredIndex);
-			return;
+			RoomSet.SwapToOrCreateAtIndex<EventModel, PrimordialDivergenceEvent>(__instance.events, desiredIndex);
+			return false;
+		}
+
+		if (choice.Branch == FirstEventBranch.Beginning)
+		{
+			RoomSet.SwapToOrCreateAtIndex<EventModel, BeginningEvent>(__instance.events, desiredIndex);
+			return false;
 		}
 
 		RoomSet.SwapToOrCreateAtIndex<EventModel, VoidPortentEvent>(__instance.events, desiredIndex);
+		return false;
 	}
 
 	private static FirstEventChoice ChooseFirstEvent(RunState runState)
 	{
-		return new FirstEventChoice((FirstEventBranch)runState.Rng.UpFront.NextInt(FirstEventBranchCount));
+		uint seed = IntegratedStrategyStableRng.CreateSeed(
+			runState.Rng.Seed,
+			"integrated_strategy_second_act_opening_event",
+			unchecked((uint)runState.CurrentActIndex));
+		MegaCrit.Sts2.Core.Random.Rng rng = new(seed, "integrated_strategy_second_act_opening_event");
+		return new FirstEventChoice((FirstEventBranch)rng.NextInt(FirstEventBranchCount));
 	}
 
 	private static bool HasVisitedOrdinaryEventInCurrentAct(RunState runState)
@@ -95,7 +155,8 @@ internal static class IntegratedStrategyFirstEventPatch
 	{
 		VoidPortent,
 		Change,
-		AnomalousReport
+		PrimordialDivergence,
+		Beginning
 	}
 
 	private sealed record FirstEventChoice(FirstEventBranch Branch);

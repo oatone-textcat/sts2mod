@@ -35,14 +35,22 @@ internal enum TreeHoleSaveKind
 	TreeHole,
 	EndlessFinale,
 	EternalDustFinale,
-	RadiantApexFinale
+	RadiantApexFinale,
+	CarefreeViharaFinale,
+	AbyssalJungleFinale,
+	AbyssalJungleIsharmlaFinale,
+	ProphetHornFragment
 }
 
 internal enum SpecialFinaleKind
 {
 	EndlessFinale,
 	EternalDust,
-	RadiantApex
+	RadiantApex,
+	CarefreeVihara,
+	AbyssalJungle,
+	AbyssalJungleIsharmla,
+	ProphetHornFragment
 }
 
 internal sealed record TreeHoleSaveSnapshot(

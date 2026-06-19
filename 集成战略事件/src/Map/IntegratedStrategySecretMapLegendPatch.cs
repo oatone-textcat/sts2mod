@@ -19,18 +19,9 @@ internal static class IntegratedStrategySecretMapLegendController
 	private const float LegendPaperBottomPadding = 72f;
 	private static readonly Vector2 SecretLegendIconSize = new(44f, 44f);
 	private static readonly ConditionalWeakTable<Control, LegendPaperLayoutState> LegendPaperStates = new();
-	private static readonly AccessTools.FieldRef<NMapLegendItem, TextureRect> LegendIconRef =
-		AccessTools.FieldRefAccess<NMapLegendItem, TextureRect>("_icon");
-	private static readonly AccessTools.FieldRef<NMapLegendItem, HoverTip> LegendHoverTipRef =
-		AccessTools.FieldRefAccess<NMapLegendItem, HoverTip>("_hoverTip");
-	private static readonly AccessTools.FieldRef<NMapLegendItem, MapPointType> LegendPointTypeRef =
-		AccessTools.FieldRefAccess<NMapLegendItem, MapPointType>("_pointType");
-	private static readonly MethodInfo? AnimHoverMethod = AccessTools.Method(typeof(NNormalMapPoint), "AnimHover");
-	private static readonly MethodInfo? AnimUnhoverMethod = AccessTools.Method(typeof(NNormalMapPoint), "AnimUnhover");
-
 	public static void EnsureSecretLegendItem(NMapScreen screen)
 	{
-		if (AccessTools.Field(typeof(NMapScreen), "_legendItems")?.GetValue(screen) is not Control legendItems)
+		if (IntegratedStrategyMapReflectionCache.GetLegendItems(screen) is not { } legendItems)
 		{
 			return;
 		}
@@ -74,7 +65,8 @@ internal static class IntegratedStrategySecretMapLegendController
 			return false;
 		}
 
-		LegendPointTypeRef(item) = IntegratedStrategySecretMapNodeController.SecretLegendHighlightPointType;
+		IntegratedStrategyMapReflectionCache.LegendItemPointType(item) =
+			IntegratedStrategySecretMapNodeController.SecretLegendHighlightPointType;
 		return true;
 	}
 
@@ -87,7 +79,7 @@ internal static class IntegratedStrategySecretMapLegendController
 
 		item.GetNode<MegaLabel>("MegaLabel")
 			.SetTextAutoSize(new LocString(LocTable, $"{LocKeyPrefix}.title").GetFormattedText());
-		LegendHoverTipRef(item) = new HoverTip(
+		IntegratedStrategyMapReflectionCache.LegendItemHoverTip(item) = new HoverTip(
 			new LocString(LocTable, $"{LocKeyPrefix}.hoverTip.title"),
 			new LocString(LocTable, $"{LocKeyPrefix}.hoverTip.description"));
 		return true;
@@ -98,7 +90,7 @@ internal static class IntegratedStrategySecretMapLegendController
 		Texture2D? icon = IntegratedStrategySecretMapNodeController.GetSecretIcon();
 		if (icon != null)
 		{
-			TextureRect iconRect = LegendIconRef(item);
+			TextureRect iconRect = IntegratedStrategyMapReflectionCache.LegendItemIcon(item);
 			iconRect.Texture = icon;
 			ResizeAroundCenter(iconRect, SecretLegendIconSize);
 		}
@@ -113,10 +105,10 @@ internal static class IntegratedStrategySecretMapLegendController
 			return false;
 		}
 
-		MethodInfo? method = isSecretNode && isSecretHighlight
-			? AnimHoverMethod
-			: AnimUnhoverMethod;
-		method?.Invoke(mapPointNode, null);
+		MethodInfo method = isSecretNode && isSecretHighlight
+			? IntegratedStrategyMapReflectionCache.NormalMapPointAnimHover
+			: IntegratedStrategyMapReflectionCache.NormalMapPointAnimUnhover;
+		method.Invoke(mapPointNode, null);
 		IntegratedStrategySecretMapNodeController.ApplySecretNodeHighlightOpacity(
 			mapPointNode,
 			isSecretNode && isSecretHighlight);
@@ -137,7 +129,7 @@ internal static class IntegratedStrategySecretMapLegendController
 
 	private static void ExpandLegendPaper(NMapScreen screen)
 	{
-		Control? mapLegend = AccessTools.Field(typeof(NMapScreen), "_mapLegend")?.GetValue(screen) as Control ??
+		Control? mapLegend = IntegratedStrategyMapReflectionCache.GetMapLegend(screen) ??
 			screen.GetNodeOrNull<Control>("MapLegend");
 		if (mapLegend == null)
 		{

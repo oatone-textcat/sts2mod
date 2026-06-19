@@ -65,6 +65,10 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 			{
 				SpecialFinaleKind.EternalDust => TreeHoleSaveKind.EternalDustFinale,
 				SpecialFinaleKind.RadiantApex => TreeHoleSaveKind.RadiantApexFinale,
+				SpecialFinaleKind.CarefreeVihara => TreeHoleSaveKind.CarefreeViharaFinale,
+				SpecialFinaleKind.AbyssalJungle => TreeHoleSaveKind.AbyssalJungleFinale,
+				SpecialFinaleKind.AbyssalJungleIsharmla => TreeHoleSaveKind.AbyssalJungleIsharmlaFinale,
+				SpecialFinaleKind.ProphetHornFragment => TreeHoleSaveKind.ProphetHornFragment,
 				_ => TreeHoleSaveKind.EndlessFinale
 			};
 

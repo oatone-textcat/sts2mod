@@ -8,7 +8,7 @@ internal sealed class IntegratedStrategyEndlessFinaleActMap : ActMap
 	private const int GridRows = 2;
 	private const int CenterColumn = 3;
 	private const int StartRow = 0;
-	private const int BossRow = GridRows;
+	private const int BossRow = GridRows - 1;
 
 	protected override MapPoint?[,] Grid { get; }
 
