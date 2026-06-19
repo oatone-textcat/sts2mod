@@ -1,0 +1,12 @@
+{
+  "BURNING_BLOOD.description": "在战斗结束时，恢复[blue]6[/blue]点生命。如果你在战斗结束时生命值等于或低于[blue]50%[/blue]，则改为恢复[blue]9[/blue]点生命。",
+  "BLACK_BLOOD.description": "在战斗结束时，恢复[blue]12[/blue]点生命。如果你在战斗结束时生命值等于或低于[blue]50%[/blue]，则改为恢复[blue]18[/blue]点生命。",
+  "RING_OF_THE_SNAKE.description": "在每场战斗开始时，额外抽[blue]3[/blue]张牌并选择[blue]1[/blue]张牌放入弃牌堆。",
+  "RING_OF_THE_DRAKE.description": "在战斗开始时的前[blue]3[/blue]个回合，你额外抽[blue]3[/blue]张牌并选择[blue]1[/blue]张牌放入弃牌堆。",
+  "DIVINE_RIGHT.description": "在每场战斗开始时，获得{Stars:starIcons()}。在你的回合开始时，如果你的星辉少于{MinStars:starIcons()}，则获得{TurnStartStars:starIcons()}。",
+  "DIVINE_DESTINY.description": "在每场战斗开始时，获得{Stars:starIcons()}。在你的回合开始时，如果你的星辉少于{MinStars:starIcons()}，则获得{TurnStartStars:starIcons()}。",
+  "BOUND_PHYLACTERY.description": "在你的回合开始时，[gold]召唤[/gold][blue]1[/blue]；如果奥提斯存活，则改为[gold]召唤[/gold][blue]2[/blue]。",
+  "PHYLACTERY_UNBOUND.description": "在每场战斗开始时，[gold]召唤[/gold][blue]5[/blue]。在你的回合开始时，[gold]召唤[/gold][blue]2[/blue]；如果奥提斯存活，则改为[gold]召唤[/gold][blue]4[/blue]。",
+  "CRACKED_CORE.description": "在每场战斗开始时，生成[blue]1[/blue]个闪电充能球。在你的第三回合开始时，获得[blue]1[/blue]点集中。",
+  "INFUSED_CORE.description": "在每场战斗开始时，生成[blue]3[/blue]个闪电充能球并获得[blue]1[/blue]点集中。"
+}

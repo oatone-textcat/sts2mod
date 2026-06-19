@@ -1,0 +1,12 @@
+{
+  "BURNING_BLOOD.description": "At the end of combat, heal [blue]6[/blue] HP. If you have [blue]50%[/blue] HP or less at the end of combat, heal [blue]9[/blue] HP instead.",
+  "BLACK_BLOOD.description": "At the end of combat, heal [blue]12[/blue] HP. If you have [blue]50%[/blue] HP or less at the end of combat, heal [blue]18[/blue] HP instead.",
+  "RING_OF_THE_SNAKE.description": "At the start of combat, draw [blue]3[/blue] additional cards, then choose [blue]1[/blue] card to put into your discard pile.",
+  "RING_OF_THE_DRAKE.description": "For the first [blue]3[/blue] turns of combat, draw [blue]3[/blue] additional cards, then choose [blue]1[/blue] card to put into your discard pile.",
+  "DIVINE_RIGHT.description": "At the start of combat, gain {Stars:starIcons()}. At the start of your turn, if you have fewer than {MinStars:starIcons()}, gain {TurnStartStars:starIcons()}.",
+  "DIVINE_DESTINY.description": "At the start of combat, gain {Stars:starIcons()}. At the start of your turn, if you have fewer than {MinStars:starIcons()}, gain {TurnStartStars:starIcons()}.",
+  "BOUND_PHYLACTERY.description": "At the start of your turn, [gold]Summon[/gold][blue]1[/blue]. If Osty is alive, [gold]Summon[/gold][blue]2[/blue] instead.",
+  "PHYLACTERY_UNBOUND.description": "At the start of combat, [gold]Summon[/gold][blue]5[/blue]. At the start of your turn, [gold]Summon[/gold][blue]2[/blue]. If Osty is alive, [gold]Summon[/gold][blue]4[/blue] instead.",
+  "CRACKED_CORE.description": "At the start of combat, channel [blue]1[/blue] [gold]Lightning[/gold]. At the start of your third turn, gain [blue]1[/blue] Focus.",
+  "INFUSED_CORE.description": "At the start of combat, channel [blue]3[/blue] [gold]Lightning[/gold] and gain [blue]1[/blue] Focus."
+}
