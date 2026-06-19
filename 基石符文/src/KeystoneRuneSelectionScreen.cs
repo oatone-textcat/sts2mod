@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
+using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
 using MegaCrit.Sts2.Core.Logging;
@@ -182,8 +183,12 @@ internal sealed class KeystoneRuneSelectionScreen : Control, IOverlayScreen, ISc
 			labelNode.Call("SetTextAutoSize", new LocString(LocTable, "KEYSTONE_SKIP").GetRawText());
 		}
 
-		skipButton.Connect("Released", Callable.From(OnSkipPressed));
+		skipButton.Connect(NClickableControl.SignalName.Released, Callable.From<NClickableControl>(_ => OnSkipPressed()));
 		AddChild(skipButton);
+		skipButton.Enable();
+		skipButton.MouseFilter = MouseFilterEnum.Stop;
+		skipButton.FocusMode = FocusModeEnum.All;
+		EnsureSkipButtonSize(skipButton);
 		_skipButton = skipButton;
 		QueueUpdateSkipButtonLayout();
 	}
@@ -195,7 +200,9 @@ internal sealed class KeystoneRuneSelectionScreen : Control, IOverlayScreen, ISc
 
 	private void OnSkipPressed()
 	{
+		Log.Info($"[{ModInfo.Id}][UI] Keystone selection skipped from custom screen.");
 		_completionSource.TrySetResult(Array.Empty<RelicModel>());
+		CloseSelectionScreen();
 	}
 
 	public async Task<IEnumerable<RelicModel>> RelicsSelected(bool closeOnSelection = true)
@@ -254,9 +261,19 @@ internal sealed class KeystoneRuneSelectionScreen : Control, IOverlayScreen, ISc
 			return;
 		}
 
+		EnsureSkipButtonSize(_skipButton!);
 		Vector2 viewportSize = GetViewportRect().Size;
 		Vector2 size = _skipButton!.Size == Vector2.Zero ? _skipButton.GetCombinedMinimumSize() : _skipButton.Size;
 		_skipButton.GlobalPosition = GlobalPosition + new Vector2((viewportSize.X - size.X) * 0.5f, viewportSize.Y - size.Y - 56f);
+	}
+
+	private static void EnsureSkipButtonSize(NChoiceSelectionSkipButton skipButton)
+	{
+		Vector2 minSize = skipButton.GetCombinedMinimumSize();
+		if (skipButton.Size == Vector2.Zero && minSize != Vector2.Zero)
+		{
+			skipButton.Size = minSize;
+		}
 	}
 
 	private static TextureRect CreateKeystoneRelicIcon(RelicModel relic)

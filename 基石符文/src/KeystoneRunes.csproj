@@ -7,14 +7,34 @@
     <Nullable>enable</Nullable>
     <GameRoot>/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app</GameRoot>
     <VersionedRefsRoot>$(MSBuildThisFileDirectory)../../HextechRunes/versioned-dll-backups</VersionedRefsRoot>
-    <OfficialGameDataDir>$(VersionedRefsRoot)/0.103.2/game-refs</OfficialGameDataDir>
+    <OfficialGameDataDir>$(VersionedRefsRoot)/0.107.1/game-refs</OfficialGameDataDir>
     <GameDataDir Condition="'$(GameDataDir)' == '' and Exists('$(OfficialGameDataDir)/sts2.dll')">$(OfficialGameDataDir)</GameDataDir>
     <GameDataDir Condition="'$(GameDataDir)' == ''">$(GameRoot)/Contents/Resources/data_sts2_macos_arm64</GameDataDir>
-    <KeystoneSts2Target Condition="'$(KeystoneSts2Target)' == ''">0.103.2</KeystoneSts2Target>
+    <KeystoneSts2Target Condition="'$(KeystoneSts2Target)' == ''">0.107.1</KeystoneSts2Target>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(KeystoneSts2Target)' == '0.104.0'">
     <DefineConstants>$(DefineConstants);STS2_104_OR_NEWER</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(KeystoneSts2Target)' == '0.105.1'">
+    <DefineConstants>$(DefineConstants);STS2_104_OR_NEWER;STS2_105_OR_NEWER</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(KeystoneSts2Target)' == '0.106.1'">
+    <DefineConstants>$(DefineConstants);STS2_104_OR_NEWER;STS2_105_OR_NEWER;STS2_106_OR_NEWER</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(KeystoneSts2Target)' == '0.107.0'">
+    <DefineConstants>$(DefineConstants);STS2_104_OR_NEWER;STS2_105_OR_NEWER;STS2_106_OR_NEWER;STS2_107_OR_NEWER</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(KeystoneSts2Target)' == '0.107.1'">
+    <DefineConstants>$(DefineConstants);STS2_104_OR_NEWER;STS2_105_OR_NEWER;STS2_106_OR_NEWER;STS2_107_OR_NEWER;STS2_107_1</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(KeystoneSts2Target)' == '0.103.3'">
+    <DefineConstants>$(DefineConstants);STS2_103_3</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

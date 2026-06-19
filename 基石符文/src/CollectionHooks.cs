@@ -47,8 +47,6 @@ internal static class CollectionHooks
 		typeof(HashSet<RelicModel>),
 		typeof(HashSet<RelicModel>));
 
-	private static string? _starterHeaderTemplate;
-
 	public static void Install(Harmony harmony)
 	{
 		MethodInfo? loadRelicsMethod = TryGetMethod(
@@ -87,16 +85,15 @@ internal static class CollectionHooks
 			return;
 		}
 
-		_starterHeaderTemplate ??= header.GetRawText();
-
-		AddKeystoneSubcategory(__instance, collection, seenRelics, allUnlockedRelics);
+		AddKeystoneSubcategory(__instance, collection, seenRelics, allUnlockedRelics, header.GetRawText());
 	}
 
 	private static void AddKeystoneSubcategory(
 		NRelicCollectionCategory self,
 		NRelicCollection collection,
 		HashSet<RelicModel> seenRelics,
-		HashSet<RelicModel> allUnlockedRelics)
+		HashSet<RelicModel> allUnlockedRelics,
+		string starterHeaderTemplate)
 	{
 		List<NRelicCollectionCategory> subCategories = GetSubCategories(self);
 		if (collection.Relics.Any(ModInfo.IsKeystoneRelic))
@@ -120,10 +117,10 @@ internal static class CollectionHooks
 				allUnlockedRelics
 			]);
 
-		ApplyCustomHeaderText(subCategory);
+		ApplyCustomHeaderText(subCategory, starterHeaderTemplate);
 	}
 
-	private static void ApplyCustomHeaderText(NRelicCollectionCategory subCategory)
+	private static void ApplyCustomHeaderText(NRelicCollectionCategory subCategory, string starterHeaderTemplate)
 	{
 		if (HeaderLabelField!.GetValue(subCategory) is not MegaRichTextLabel headerLabel)
 		{
@@ -131,7 +128,7 @@ internal static class CollectionHooks
 		}
 
 		string fallback = new LocString("relic_collection", ModInfo.KeystoneSubcategoryKey).GetRawText();
-		headerLabel.SetTextAutoSize(FormatLikeStarterHeader(_starterHeaderTemplate, fallback));
+		headerLabel.SetTextAutoSize(FormatLikeStarterHeader(starterHeaderTemplate, fallback));
 	}
 
 	private static string FormatLikeStarterHeader(string? starterTemplate, string fallback)
