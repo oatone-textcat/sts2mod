@@ -1,6 +1,6 @@
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
@@ -41,15 +41,9 @@ public static class ModEntry
 
 	private const float UpperRowHitboxHeightFactor = 0.56f;
 
-	private const int HoverTipZIndex = 1000;
-
 	private static Harmony? _harmony;
 
 	private static readonly Dictionary<ulong, Rect2> OriginalHitboxRects = new();
-
-	private static readonly HashSet<ulong> HoveredHolderIds = new();
-
-	private static bool _loggedSkippedBlockedHoverTipAlignment;
 
 	private static readonly FieldInfo SelectCardShortcutsField = RequireField(typeof(NPlayerHand), "_selectCardShortcuts", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -61,7 +55,8 @@ public static class ModEntry
 
 	private static readonly FieldInfo LastFocusedHolderIndexField = RequireField(typeof(NPlayerHand), "_lastFocusedHolderIdx", BindingFlags.Instance | BindingFlags.NonPublic);
 
-	private static readonly FieldInfo HoverTipOwnerField = RequireField(typeof(NHoverTipSet), "_owner", BindingFlags.Instance | BindingFlags.NonPublic);
+	private static readonly MethodInfo MaxCardsInHandGetterMethod = RequireProperty(typeof(CardPile), nameof(CardPile.MaxCardsInHand), BindingFlags.Public | BindingFlags.Static).GetMethod
+		?? throw new InvalidOperationException("[RemoveHandLimit] Could not find CardPile.MaxCardsInHand getter.");
 
 	private static readonly FieldInfo HandPosCardPositionDataField = RequireField(typeof(HandPosHelper), "_cardPositionData", BindingFlags.Static | BindingFlags.NonPublic);
 
@@ -133,11 +128,6 @@ public static class ModEntry
 			typeof(NPlayerHand),
 			"RefreshLayout",
 			BindingFlags.Instance | BindingFlags.NonPublic);
-		MethodInfo handCardHoverMethod = RequireMethod(
-			typeof(NHandCardHolder),
-			"DoCardHoverEffects",
-			BindingFlags.Instance | BindingFlags.NonPublic,
-			typeof(bool));
 		MethodInfo onHolderFocusedMethod = RequireMethod(
 			typeof(NPlayerHand),
 			"OnHolderFocused",
@@ -148,11 +138,11 @@ public static class ModEntry
 			"OnHolderUnfocused",
 			BindingFlags.Instance | BindingFlags.NonPublic,
 			typeof(NHandCardHolder));
-		MethodInfo hoverTipAlignmentMethod = RequireMethod(
-			typeof(NHoverTipSet),
-			nameof(NHoverTipSet.SetAlignmentForCardHolder),
-			BindingFlags.Instance | BindingFlags.Public,
-			typeof(NCardHolder));
+		MethodInfo handCardHoverMethod = RequireMethod(
+			typeof(NHandCardHolder),
+			"DoCardHoverEffects",
+			BindingFlags.Instance | BindingFlags.NonPublic,
+			typeof(bool));
 		MethodInfo startCardPlayMethod = RequireMethod(
 			typeof(NPlayerHand),
 			"StartCardPlay",
@@ -160,6 +150,7 @@ public static class ModEntry
 			typeof(NHandCardHolder),
 			typeof(bool));
 
+		harmony.Patch(MaxCardsInHandGetterMethod, prefix: new HarmonyMethod(typeof(ModEntry), nameof(MaxCardsInHandPrefix)));
 		harmony.Patch(GetAsyncStateMachineTarget(addCardsMethod), transpiler: new HarmonyMethod(typeof(ModEntry), nameof(PatchAddCardsTranspiler)));
 		harmony.Patch(GetAsyncStateMachineTarget(drawMethod), transpiler: new HarmonyMethod(typeof(ModEntry), nameof(PatchDrawTranspiler)));
 		harmony.Patch(checkCanDrawMethod, transpiler: new HarmonyMethod(typeof(ModEntry), nameof(PatchCheckCanDrawTranspiler)));
@@ -170,41 +161,40 @@ public static class ModEntry
 			refreshLayoutMethod,
 			prefix: new HarmonyMethod(typeof(ModEntry), nameof(RefreshLayoutPrefix)),
 			postfix: new HarmonyMethod(typeof(ModEntry), nameof(RefreshLayoutPostfix)));
-		harmony.Patch(
-			handCardHoverMethod,
-			prefix: new HarmonyMethod(typeof(ModEntry), nameof(DoCardHoverEffectsPrefix)),
-			postfix: new HarmonyMethod(typeof(ModEntry), nameof(DoCardHoverEffectsPostfix)));
 		harmony.Patch(onHolderFocusedMethod, prefix: new HarmonyMethod(typeof(ModEntry), nameof(OnHolderFocusedPrefix)));
 		harmony.Patch(onHolderUnfocusedMethod, prefix: new HarmonyMethod(typeof(ModEntry), nameof(OnHolderUnfocusedPrefix)));
-		harmony.Patch(
-			hoverTipAlignmentMethod,
-			prefix: new HarmonyMethod(typeof(ModEntry), nameof(SetAlignmentForCardHolderPrefix)),
-			postfix: new HarmonyMethod(typeof(ModEntry), nameof(SetAlignmentForCardHolderPostfix)));
+		harmony.Patch(handCardHoverMethod, postfix: new HarmonyMethod(typeof(ModEntry), nameof(DoCardHoverEffectsPostfix)));
 		harmony.Patch(startCardPlayMethod, prefix: new HarmonyMethod(typeof(ModEntry), nameof(StartCardPlayPrefix)));
+	}
+
+	private static bool MaxCardsInHandPrefix(ref int __result)
+	{
+		__result = HandLimit;
+		return false;
 	}
 
 	private static IEnumerable<CodeInstruction> PatchAddCardsTranspiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 	{
-		return ReplaceIntLoads(instructions, expectedCount: 1, __originalMethod);
+		return ReplaceMaxCardsInHandCalls(instructions, expectedCount: 1, __originalMethod);
 	}
 
 	private static IEnumerable<CodeInstruction> PatchDrawTranspiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 	{
-		return ReplaceIntLoads(instructions, expectedCount: 3, __originalMethod);
+		return ReplaceMaxCardsInHandCalls(instructions, expectedCount: 3, __originalMethod);
 	}
 
 	private static IEnumerable<CodeInstruction> PatchCheckCanDrawTranspiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
 	{
-		return ReplaceIntLoads(instructions, expectedCount: 1, __originalMethod);
+		return ReplaceMaxCardsInHandCalls(instructions, expectedCount: 1, __originalMethod);
 	}
 
-	private static IEnumerable<CodeInstruction> ReplaceIntLoads(IEnumerable<CodeInstruction> instructions, int expectedCount, MethodBase originalMethod)
+	private static IEnumerable<CodeInstruction> ReplaceMaxCardsInHandCalls(IEnumerable<CodeInstruction> instructions, int expectedCount, MethodBase originalMethod)
 	{
 		List<CodeInstruction> patchedInstructions = instructions.ToList();
 		int patched = 0;
 		foreach (CodeInstruction instruction in patchedInstructions)
 		{
-			if (!TryGetLoadedInt32(instruction, out int value) || value != 10)
+			if (!instruction.Calls(MaxCardsInHandGetterMethod))
 			{
 				continue;
 			}
@@ -216,89 +206,10 @@ public static class ModEntry
 
 		if (patched != expectedCount)
 		{
-			throw new InvalidOperationException($"[RemoveHandLimit] Expected to patch {expectedCount} int loads in {originalMethod.FullDescription()}, but patched {patched}.");
+			throw new InvalidOperationException($"[RemoveHandLimit] Expected to patch {expectedCount} MaxCardsInHand calls in {originalMethod.FullDescription()}, but patched {patched}.");
 		}
 
 		return patchedInstructions;
-	}
-
-	private static bool TryGetLoadedInt32(CodeInstruction instruction, out int value)
-	{
-		OpCode opcode = instruction.opcode;
-		if (opcode == OpCodes.Ldc_I4_M1)
-		{
-			value = -1;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_0)
-		{
-			value = 0;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_1)
-		{
-			value = 1;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_2)
-		{
-			value = 2;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_3)
-		{
-			value = 3;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_4)
-		{
-			value = 4;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_5)
-		{
-			value = 5;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_6)
-		{
-			value = 6;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_7)
-		{
-			value = 7;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_8)
-		{
-			value = 8;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4_S && instruction.operand is sbyte shortValue)
-		{
-			value = shortValue;
-			return true;
-		}
-
-		if (opcode == OpCodes.Ldc_I4 && instruction.operand is int intValue)
-		{
-			value = intValue;
-			return true;
-		}
-
-		value = 0;
-		return false;
 	}
 
 	private static bool GetPositionPrefix(int handSize, int cardIndex, ref Vector2 __result)
@@ -390,17 +301,8 @@ public static class ModEntry
 
 	private static void RefreshLayoutPostfix(NPlayerHand __instance)
 	{
-		UpdateHolderZIndices(__instance);
-	}
-
-	private static void DoCardHoverEffectsPrefix(NHandCardHolder __instance, bool isHovered)
-	{
-		SetHolderHoverState(__instance, isHovered);
-	}
-
-	private static void DoCardHoverEffectsPostfix(NHandCardHolder __instance, bool isHovered)
-	{
-		ApplyHolderZIndex(__instance, isHovered);
+		UpdateHolderLayering(__instance);
+		UpdateHolderHitboxes(__instance);
 	}
 
 	private static bool OnHolderFocusedPrefix(NPlayerHand __instance, NHandCardHolder holder)
@@ -410,13 +312,12 @@ public static class ModEntry
 			return true;
 		}
 
-		SetHolderHoverState(holder, isHovered: true);
 		SetLastFocusedHolderIndex(__instance, holder.GetIndex());
 		if (holder.CardModel != null)
 		{
 			RunManager.Instance.HoveredModelTracker.OnLocalCardHovered(holder.CardModel);
 		}
-		UpdateHolderZIndices(__instance);
+		UpdateHolderHitboxes(__instance);
 		return false;
 	}
 
@@ -427,28 +328,16 @@ public static class ModEntry
 			return true;
 		}
 
-		SetHolderHoverState(holder, isHovered: false);
 		RunManager.Instance.HoveredModelTracker.OnLocalCardUnhovered();
-		UpdateHolderZIndices(__instance);
+		UpdateHolderHitboxes(__instance);
 		return false;
 	}
 
-	private static bool SetAlignmentForCardHolderPrefix(NHoverTipSet __instance, NCardHolder holder, out bool __state)
+	private static void DoCardHoverEffectsPostfix(NHandCardHolder __instance)
 	{
-		__state = CanAlignCardHoverTipSet(__instance, holder);
-		if (!__state)
+		if (__instance.GetParent() is Control parent && parent.GetParent() is NPlayerHand hand)
 		{
-			LogSkippedBlockedHoverTipAlignment();
-		}
-
-		return __state;
-	}
-
-	private static void SetAlignmentForCardHolderPostfix(NHoverTipSet __instance, bool __state)
-	{
-		if (__state)
-		{
-			BringHoverTipToFront(__instance);
+			UpdateHolderLayering(hand);
 		}
 	}
 
@@ -462,7 +351,7 @@ public static class ModEntry
 		}
 
 		SetDraggedHolderIndex(__instance, holderIndex);
-		GetHoldersAwaitingQueue(__instance).Add(holder, holderIndex);
+		GetHoldersAwaitingQueue(__instance).Add(holder);
 		holder.Reparent(__instance);
 		holder.BeginDrag();
 
@@ -496,43 +385,14 @@ public static class ModEntry
 			: throw new InvalidOperationException($"[RemoveHandLimit] Could not read field {fieldInfo.DeclaringType?.FullName}.{fieldInfo.Name}.");
 	}
 
-	private static bool CanAlignCardHoverTipSet(NHoverTipSet hoverTipSet, NCardHolder holder)
-	{
-		if (NHoverTipSet.shouldBlockHoverTips
-			|| !GodotObject.IsInstanceValid(hoverTipSet)
-			|| !GodotObject.IsInstanceValid(holder))
-		{
-			return false;
-		}
-
-		if (HoverTipOwnerField.GetValue(hoverTipSet) is not Control owner || !GodotObject.IsInstanceValid(owner))
-		{
-			return false;
-		}
-
-		Control? hitbox = holder.Hitbox;
-		return hitbox != null && GodotObject.IsInstanceValid(hitbox);
-	}
-
-	private static void LogSkippedBlockedHoverTipAlignment()
-	{
-		if (_loggedSkippedBlockedHoverTipAlignment)
-		{
-			return;
-		}
-
-		_loggedSkippedBlockedHoverTipAlignment = true;
-		Log.Warn("[RemoveHandLimit] Skipped card hover-tip alignment while the hover tip set was blocked or detached.", 1);
-	}
-
 	private static StringName[] GetSelectCardShortcuts(NPlayerHand hand)
 	{
 		return (StringName[])(SelectCardShortcutsField.GetValue(hand) ?? Array.Empty<StringName>());
 	}
 
-	private static Dictionary<NHandCardHolder, int> GetHoldersAwaitingQueue(NPlayerHand hand)
+	private static HashSet<NHandCardHolder> GetHoldersAwaitingQueue(NPlayerHand hand)
 	{
-		return (Dictionary<NHandCardHolder, int>)(HoldersAwaitingQueueField.GetValue(hand)
+		return (HashSet<NHandCardHolder>)(HoldersAwaitingQueueField.GetValue(hand)
 			?? throw new InvalidOperationException("[RemoveHandLimit] Could not access _holdersAwaitingQueue."));
 	}
 
@@ -584,60 +444,34 @@ public static class ModEntry
 		}
 	}
 
-	private static void UpdateHolderZIndices(NPlayerHand hand)
+	private static void UpdateHolderHitboxes(NPlayerHand hand)
 	{
 		foreach (NHandCardHolder holder in hand.ActiveHolders)
 		{
-			ApplyHolderZIndex(holder, IsHolderHovered(holder));
 			UpdateHolderHitbox(holder);
 		}
 	}
 
-	private static void ApplyHolderZIndex(NHandCardHolder holder, bool isHovered)
+	private static void UpdateHolderLayering(NPlayerHand hand)
 	{
-		if (holder.GetParent() is not Control parent || parent.GetParent() is not NPlayerHand hand)
+		hand.CardHolderContainer.YSortEnabled = false;
+		IReadOnlyList<NHandCardHolder> holders = hand.ActiveHolders;
+		if (holders.Count <= RowLimit)
 		{
+			foreach (NHandCardHolder holder in holders)
+			{
+				holder.ZIndex = 0;
+			}
 			return;
 		}
 
-		int activeCount = hand.ActiveHolders.Count;
-		int holderIndex = holder.GetIndex();
-		bool useTwoRows = activeCount > RowLimit;
-		bool isLowerRow = !useTwoRows || holderIndex < RowLimit;
-		int baseZ = isLowerRow ? 10 : 0;
-		int visualZ = baseZ + (isHovered ? 100 : 0);
-		holder.ZIndex = visualZ;
-		holder.Hitbox.ZIndex = baseZ;
-	}
-
-	private static void SetHolderHoverState(NHandCardHolder holder, bool isHovered)
-	{
-		ulong holderId = holder.GetInstanceId();
-		if (isHovered)
+		for (int i = 0; i < holders.Count; i++)
 		{
-			HoveredHolderIds.Add(holderId);
+			NHandCardHolder holder = holders[i];
+			int rowIndex = i % RowLimit;
+			int rowBase = i < RowLimit ? RowLimit : 0;
+			holder.ZIndex = rowBase + rowIndex;
 		}
-		else
-		{
-			HoveredHolderIds.Remove(holderId);
-		}
-	}
-
-	private static bool IsHolderHovered(NHandCardHolder holder)
-	{
-		return HoveredHolderIds.Contains(holder.GetInstanceId());
-	}
-
-	private static void BringHoverTipToFront(NHoverTipSet hoverTipSet)
-	{
-		if (NGame.Instance?.HoverTipsContainer is CanvasItem hoverTipsContainer)
-		{
-			hoverTipsContainer.ZIndex = HoverTipZIndex;
-			hoverTipsContainer.MoveToFront();
-		}
-
-		hoverTipSet.ZIndex = HoverTipZIndex;
-		hoverTipSet.MoveToFront();
 	}
 
 	private static void UpdateHolderHitbox(NHandCardHolder holder)

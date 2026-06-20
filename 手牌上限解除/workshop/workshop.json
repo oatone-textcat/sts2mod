@@ -1,0 +1,10 @@
+{
+  "title": "解除手牌上限",
+  "description": "将 STS2 战斗手牌上限改为 20，超过 10 张时以两排布局显示，并修复双排手牌遮挡顺序。适配游戏 0.107.1。",
+  "visibility": "private",
+  "changeNote": "0.3.0：适配游戏 0.107.1，标准单 DLL，修复双排手牌遮挡顺序。",
+  "tags": [
+    "gameplay"
+  ],
+  "dependencies": []
+}
