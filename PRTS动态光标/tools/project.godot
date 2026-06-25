@@ -1,0 +1,8 @@
+; Engine configuration file.
+; Minimal project used only to import resources before packing the STS2 mod PCK.
+
+config_version=5
+
+[application]
+
+config/name="PRTSCursor Import"
