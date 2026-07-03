@@ -206,6 +206,15 @@ internal static class IntegratedStrategySecretMapNodeController
 			return false;
 		}
 
+		if (IntegratedStrategyEventReplay.TryRestoreSavedCurrentEvent(
+				roomSet,
+				state,
+				IntegratedStrategyEventReplay.IsSecondActOpeningBranch,
+				"saved second-act opening event on secret node"))
+		{
+			return true;
+		}
+
 		int desiredIndex = roomSet.eventsVisited % roomSet.events.Count;
 		if (IsAtProphetHornSecretNode(state))
 		{
@@ -237,6 +246,25 @@ internal static class IntegratedStrategySecretMapNodeController
 		Log.Info(
 			$"{ModInfo.LogPrefix} Secret map node forced next event to " +
 			$"{ModelDb.GetId(selectedType).Entry}.");
+		return true;
+	}
+
+	public static bool TryGetForcedEventType(RunState state, out Type eventType)
+	{
+		if (!IsAtSecretNode(state) ||
+			IntegratedStrategyFirstEventPatch.ShouldForceSecondActOpeningEvent(state))
+		{
+			eventType = null!;
+			return false;
+		}
+
+		if (IsAtProphetHornSecretNode(state))
+		{
+			eventType = typeof(TruthToBeToldEvent);
+			return true;
+		}
+
+		eventType = SelectTreeHoleEventType(state);
 		return true;
 	}
 
@@ -333,16 +361,34 @@ internal static class IntegratedStrategySecretMapNodeController
 			unchecked((uint)state.CurrentActIndex),
 			IntegratedStrategyStableRng.HashCoord(coord));
 		Rng rng = new(seed, "integrated_strategy_secret_tree_hole_event");
-		Type[] candidates = TreeHoleEventTypes
+		Type[] availableTypes = TreeHoleEventTypes
+			.Where(eventType => CanTreeHoleEventEnterForAllPlayers(state, eventType))
+			.ToArray();
+		Type[] candidates = availableTypes
 			.Where(eventType => !state.VisitedEventIds.Contains(ModelDb.GetId(eventType)))
 			.ToArray();
 
 		if (candidates.Length == 0)
 		{
-			candidates = TreeHoleEventTypes;
+			candidates = availableTypes;
 		}
 
 		return candidates[rng.NextInt(candidates.Length)];
+	}
+
+	private static bool CanTreeHoleEventEnterForAllPlayers(RunState state, Type eventType)
+	{
+		if (eventType == typeof(ForwardForestEvent))
+		{
+			return ForwardForestEvent.CanEnterTreeHoleForAllPlayers(state);
+		}
+
+		if (eventType == typeof(GlimpseEvent))
+		{
+			return GlimpseEvent.CanEnterTreeHoleForAllPlayers(state);
+		}
+
+		return true;
 	}
 
 	private static uint CreateSecretNodeSeed(RunState state, int actIndex)
@@ -546,6 +592,12 @@ internal static class IntegratedStrategySecretMapNodeEventPatch
 	{
 		if (!IntegratedStrategySecretMapNodeController.IsAtSecretNode(runState))
 		{
+			return true;
+		}
+
+		if (IntegratedStrategyFirstEventPatch.ShouldForceSecondActOpeningEvent(runState))
+		{
+			Log.Info($"{ModInfo.LogPrefix} Secret map node deferred to second-act opening event.");
 			return true;
 		}
 

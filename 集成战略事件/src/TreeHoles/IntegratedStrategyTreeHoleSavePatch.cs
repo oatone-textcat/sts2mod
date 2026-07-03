@@ -12,8 +12,14 @@ internal static class IntegratedStrategyTreeHoleSavePatch
 	private static void Postfix(SerializableRun __result)
 	{
 		RunState? state = RunManager.Instance.DebugOnlyGetState();
+		if (state == null)
+		{
+			IntegratedStrategyTreeHoleSaveStateStore.Clear();
+			return;
+		}
+
 		TreeHoleSaveSnapshot? snapshot = IntegratedStrategyTreeHoleController.GetSaveSnapshot(state);
-		if (state == null || snapshot == null)
+		if (snapshot == null)
 		{
 			IntegratedStrategyTreeHoleSaveStateStore.Clear();
 			return;

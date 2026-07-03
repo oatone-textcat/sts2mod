@@ -45,6 +45,11 @@ internal static class IntegratedStrategyTreeHoleController
 		return TreeHoleSessionManager.TryRestoreCompletedCurrentRunAfterTerminalProceed();
 	}
 
+	public static void MarkTerminalRewardsProceededCurrentRun()
+	{
+		TreeHoleSessionManager.MarkTerminalRewardsProceededCurrentRun();
+	}
+
 	public static bool TryGetCurrentDestination(out string actName)
 	{
 		return TreeHoleSessionManager.TryGetCurrentDestination(out actName);

@@ -49,7 +49,7 @@ public sealed partial class ForSurvivalEvent : IntegratedStrategyEventModel
 	private async Task WorkSmall()
 	{
 		await SpendGold(SmallWorkCost);
-		if (OwnerOrThrow.PlayerRng.Rewards.NextInt(100) < SmallWorkSuccessPercent)
+		if (Rng.NextInt(100) < SmallWorkSuccessPercent)
 		{
 			await GainGold(SmallWorkReward);
 		}
@@ -65,7 +65,7 @@ public sealed partial class ForSurvivalEvent : IntegratedStrategyEventModel
 	private async Task WorkBig()
 	{
 		await SpendGold(BigWorkCost);
-		if (OwnerOrThrow.PlayerRng.Rewards.NextBool())
+		if (Rng.NextBool())
 		{
 			await GainGold(BigWorkReward);
 		}

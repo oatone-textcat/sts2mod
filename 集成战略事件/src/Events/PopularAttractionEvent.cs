@@ -13,7 +13,7 @@ public sealed partial class PopularAttractionEvent : IntegratedStrategyEventMode
 		RelicModel? latestRelic = GetMostRecentlyObtainedRelic();
 		return
 		[
-			latestRelic != null
+			latestRelic != null && AllPlayersHaveMostRecentlyObtainedRelic()
 				? RelicCostChoice(latestRelic, BuyTicket, "BUY_TICKET")
 				: LockedChoice("BUY_TICKET_LOCKED"),
 			Choice(SneakIn, "SNEAK_IN"),

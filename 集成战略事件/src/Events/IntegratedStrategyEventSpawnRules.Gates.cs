@@ -1,10 +1,8 @@
-using IntegratedStrategyEvents.TreeHoles;
 using IntegratedStrategyEvents.Map;
+using IntegratedStrategyEvents.TreeHoles;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace IntegratedStrategyEvents.Events;
@@ -27,17 +25,16 @@ internal static partial class IntegratedStrategyEventSpawnRules
 
 	private const int TimidThievesMinimumMaxHp = 3;
 	private const int FutureHunterCardsToRemove = 2;
-	private const int SecondActIndex = 1;
 
 	private static readonly IReadOnlyDictionary<Type, Func<IRunState, bool>> AllowRules =
 		new Dictionary<Type, Func<IRunState, bool>>
 		{
 			[typeof(EntrustAdventurerEvent)] = static runState =>
-				AllPlayersHaveGold(runState, EntrustAdventurerMinimumGold),
+				AnyPlayerHasGold(runState, EntrustAdventurerMinimumGold),
 			[typeof(AllComersWelcomeEvent)] = static runState =>
-				AllPlayersHaveGold(runState, AllComersWelcomeMinimumGold),
+				AnyPlayerHasGold(runState, AllComersWelcomeMinimumGold),
 			[typeof(NorthernWizardArenaEvent)] = static runState =>
-				AllPlayersHaveGold(runState, NorthernWizardArenaMinimumGold),
+				AnyPlayerHasGold(runState, NorthernWizardArenaMinimumGold),
 			[typeof(ForwardForestEvent)] = static _ => false,
 			[typeof(GlimpseEvent)] = static _ => false,
 			[typeof(ShiftingCityEvent)] = static _ => false,
@@ -75,19 +72,19 @@ internal static partial class IntegratedStrategyEventSpawnRules
 			[typeof(FortuneFlowsEvent)] = static runState =>
 				AllPlayersHaveGold(runState, FortuneFlowsMinimumGold),
 			[typeof(ForSurvivalEvent)] = static runState =>
-				AllPlayersHaveGold(runState, ForSurvivalMinimumStartingGold),
+				AnyPlayerHasGold(runState, ForSurvivalMinimumStartingGold),
 			[typeof(TransmissionEvent)] = static runState =>
 				runState.Players.Any(HasTransformableStrikeOrDefend),
 			[typeof(WastefulRevelryEvent)] = static runState =>
-				AllPlayersCanLoseHp(runState, WastefulRevelryMinimumHp - 1),
+				AnyPlayerCanLoseHp(runState, WastefulRevelryMinimumHp - 1),
 			[typeof(FatefulMeetingEvent)] = static runState =>
-				AllPlayersCanLoseHp(runState, FatefulMeetingMinimumHp - 1),
+				AnyPlayerCanLoseHp(runState, FatefulMeetingMinimumHp - 1),
 			[typeof(PathOfSufferingEvent)] = static runState =>
-				AllPlayersCanLoseHp(runState, PathOfSufferingMinimumHp - 1),
+				AnyPlayerCanLoseHp(runState, PathOfSufferingMinimumHp - 1),
 			[typeof(HundredMileEncampmentEvent)] = static runState =>
 				AllPlayersCanLoseHp(runState, HundredMileEncampmentMinimumHp - 1),
 			[typeof(TimidThievesEvent)] = static runState =>
-				AllPlayersCanLoseMaxHp(runState, TimidThievesMinimumMaxHp - 1),
+				AnyPlayerCanLoseMaxHp(runState, TimidThievesMinimumMaxHp - 1),
 			[typeof(RoyalDisputeEvent)] = static runState =>
 				runState.Players.All(HasOffColorCardPool),
 			[typeof(FutureHunterEvent)] = static runState =>
@@ -101,20 +98,15 @@ internal static partial class IntegratedStrategyEventSpawnRules
 		return runState.Players.All(player => player.Gold >= amount);
 	}
 
+	private static bool AnyPlayerHasGold(IRunState runState, int amount)
+	{
+		return runState.Players.Any(player => player.Gold >= amount);
+	}
+
 	private static bool IsSecondActOpeningBranchAvailable(IRunState runState)
 	{
 		return runState is RunState state &&
-			state.CurrentActIndex == SecondActIndex &&
-			!IntegratedStrategyTreeHoleController.IsActive(state) &&
-			!HasVisitedOrdinaryEventInCurrentAct(state);
-	}
-
-	private static bool HasVisitedOrdinaryEventInCurrentAct(RunState runState)
-	{
-		return runState.MapPointHistory.Count > runState.CurrentActIndex &&
-			runState.MapPointHistory[runState.CurrentActIndex].Any(static entry =>
-				entry.MapPointType == MapPointType.Unknown &&
-				entry.Rooms.Any(static room => room.RoomType == RoomType.Event));
+			IntegratedStrategyFirstEventPatch.ShouldForceSecondActOpeningEvent(state);
 	}
 
 	private static bool AllPlayersHaveGoldBetween(IRunState runState, int minimum, int maximum)
@@ -127,9 +119,19 @@ internal static partial class IntegratedStrategyEventSpawnRules
 		return runState.Players.All(player => IntegratedStrategyEventEffects.CanLoseHp(player, amount));
 	}
 
+	private static bool AnyPlayerCanLoseHp(IRunState runState, int amount)
+	{
+		return runState.Players.Any(player => IntegratedStrategyEventEffects.CanLoseHp(player, amount));
+	}
+
 	private static bool AllPlayersCanLoseMaxHp(IRunState runState, int amount)
 	{
 		return runState.Players.All(player => IntegratedStrategyEventEffects.CanLoseMaxHp(player, amount));
+	}
+
+	private static bool AnyPlayerCanLoseMaxHp(IRunState runState, int amount)
+	{
+		return runState.Players.Any(player => IntegratedStrategyEventEffects.CanLoseMaxHp(player, amount));
 	}
 
 	private static bool HasOffColorCardPool(Player player)

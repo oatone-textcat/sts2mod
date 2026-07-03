@@ -115,13 +115,10 @@ internal static class SpecialFinaleCoordinator
 			return true;
 		}
 
-		if (!TreeHoleSessionManager.AddPendingFinaleEntry(state))
-		{
-			result = Task.CompletedTask;
-			return false;
-		}
-
-		result = EnterSpecialFinale(runManager, state, finaleKind.Value);
+		IntegratedStrategyTemporaryMapAction.EnqueueSpecialFinaleEntry(
+			GetLocalActionOwner(runManager, state),
+			finaleKind.Value);
+		result = Task.CompletedTask;
 		return false;
 	}
 
@@ -182,7 +179,7 @@ internal static class SpecialFinaleCoordinator
 
 	public static Task EnterProphetHornFragmentFromEvent(Player owner, string destinationActName, string stageLabel)
 	{
-		_ = TaskHelper.RunSafely(EnterProphetHornFragmentFromEventDeferred(owner, destinationActName, stageLabel));
+		IntegratedStrategyTemporaryMapAction.EnqueueProphetHornFragmentEntry(owner, destinationActName, stageLabel);
 		return Task.CompletedTask;
 	}
 
@@ -287,10 +284,46 @@ internal static class SpecialFinaleCoordinator
 		return HasEndlessKey(state) ? SpecialFinaleKind.EndlessFinale : null;
 	}
 
+	internal static Task EnterSpecialFinaleFromSyncedAction(Player owner, SpecialFinaleKind finaleKind)
+	{
+		if (owner.RunState is not RunState state)
+		{
+			Log.Warn($"{ModInfo.LogPrefix} Tried to enter special finale without a run state.");
+			return Task.CompletedTask;
+		}
+
+		if (GetSpecialFinaleEntryKind(state) != finaleKind)
+		{
+			Log.Warn($"{ModInfo.LogPrefix} Special finale synced entry was ignored because the run state changed.");
+			return Task.CompletedTask;
+		}
+
+		if (!TreeHoleSessionManager.AddPendingFinaleEntry(state))
+		{
+			return Task.CompletedTask;
+		}
+
+		return EnterSpecialFinale(RunManager.Instance, state, finaleKind);
+	}
+
+	internal static Task EnterProphetHornFragmentFromSyncedAction(
+		Player owner,
+		string destinationActName,
+		string stageLabel)
+	{
+		return EnterProphetHornFragmentFromEventDeferred(owner, destinationActName, stageLabel);
+	}
+
 	private static bool HasEndlessKey(RunState state)
 	{
 		return state.Players.Any(static player =>
 			player.Relics.Any(static relic => !relic.IsMelted && relic is EndlessKeyRelic));
+	}
+
+	private static Player GetLocalActionOwner(RunManager runManager, RunState state)
+	{
+		return state.Players.FirstOrDefault(player => player.NetId == runManager.NetService.NetId) ??
+			state.Players.First();
 	}
 
 	private static bool HasDimensionalFluid(RunState state)
@@ -513,8 +546,7 @@ internal static class SpecialFinaleCoordinator
 			IsAtEndlessFinaleBossPoint(state, session))
 		{
 			finaleKind = session.Kind;
-			return model is not EncounterModel incomingEncounter ||
-				IsExpectedFinaleEncounter(incomingEncounter, finaleKind);
+			return true;
 		}
 
 		finaleKind = default;

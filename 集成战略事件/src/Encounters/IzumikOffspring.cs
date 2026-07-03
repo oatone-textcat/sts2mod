@@ -30,6 +30,7 @@ public sealed class IzumikOffspring : MonsterModel
 	private const float SummonDelay = 0.75f;
 	private const string IllusionMoveId = "ILLUSION_MOVE";
 	private const string SummonTrigger = "SummonTrigger";
+	private const string GremlinMercId = "GREMLIN_MERC";
 
 	private bool _hasTransformed;
 
@@ -137,12 +138,21 @@ public sealed class IzumikOffspring : MonsterModel
 		}
 	}
 
+	// 只允许原版程序集的普通遭遇怪进入变身池：其他模组注册的怪可能依赖各自的
+	// EncounterHook/场景初始化，被裸召唤后没有合法 move，会中断回合推进链；
+	// 事件专属遭遇（*EventEncounter）的怪不属于正常战斗池。
+	private static readonly Assembly VanillaAssembly = typeof(MonsterModel).Assembly;
+
 	private MonsterModel? ChooseRandomSmallMonster()
 	{
 		List<MonsterModel> candidates = ModelDb.AllEncounters
-			.Where(static encounter => encounter.RoomType == RoomType.Monster && !encounter.IsDebugEncounter)
+			.Where(static encounter => encounter.RoomType == RoomType.Monster &&
+				!encounter.IsDebugEncounter &&
+				encounter.GetType().Assembly == VanillaAssembly &&
+				!encounter.GetType().Name.EndsWith("EventEncounter", StringComparison.Ordinal))
 			.SelectMany(static encounter => encounter.AllPossibleMonsters)
-			.Where(static monster => !IsInvalidTransformTarget(monster))
+			.Where(static monster => monster.GetType().Assembly == VanillaAssembly &&
+				!IsInvalidTransformTarget(monster))
 			.GroupBy(static monster => monster.Id.Entry, StringComparer.Ordinal)
 			.Select(static group => group.First())
 			.OrderBy(static monster => monster.Id.Entry, StringComparer.Ordinal)
@@ -155,9 +165,16 @@ public sealed class IzumikOffspring : MonsterModel
 	private static bool IsInvalidTransformTarget(MonsterModel monster)
 	{
 		return monster.CanonicalInstance is IzumikOffspring ||
+			IsKnownUnsafeTransformTarget(monster) ||
 			HasIllusionPowerOnSpawn(monster) ||
 			monster.MaxInitialHp > MaxTransformTargetHp ||
 			HasUnsafeMoveStateMachine(monster);
+	}
+
+	private static bool IsKnownUnsafeTransformTarget(MonsterModel monster)
+	{
+		return monster.CanonicalInstance is GremlinMerc ||
+			monster.Id.Entry.Equals(GremlinMercId, StringComparison.Ordinal);
 	}
 
 	private static bool HasIllusionPowerOnSpawn(MonsterModel monster)

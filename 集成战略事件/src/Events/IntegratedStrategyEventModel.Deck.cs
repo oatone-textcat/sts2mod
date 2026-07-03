@@ -17,6 +17,11 @@ public abstract partial class IntegratedStrategyEventModel
 		return PileType.Deck.GetPile(owner).Cards.Any(static card => card.IsUpgradable);
 	}
 
+	protected bool AllPlayersHaveUpgradableDeckCards()
+	{
+		return OwnerOrThrow.RunState.Players.All(HasUpgradableDeckCards);
+	}
+
 	protected Task TransformDeckCards(int count)
 	{
 		return IntegratedStrategyEventEffects.TransformDeckCards(OwnerOrThrow, count);
@@ -32,9 +37,19 @@ public abstract partial class IntegratedStrategyEventModel
 		return IntegratedStrategyEventEffects.CountTransformableDeckCards(owner) >= count;
 	}
 
+	protected bool AllPlayersHaveTransformableDeckCards(int count)
+	{
+		return OwnerOrThrow.RunState.Players.All(player => HasTransformableDeckCards(player, count));
+	}
+
 	protected static bool HasTransformableBasicDeckCard(Player owner, CardTag tag)
 	{
 		return IntegratedStrategyEventEffects.CountTransformableBasicDeckCards(owner, tag) > 0;
+	}
+
+	protected bool AllPlayersHaveTransformableBasicDeckCard(CardTag tag)
+	{
+		return OwnerOrThrow.RunState.Players.All(player => HasTransformableBasicDeckCard(player, tag));
 	}
 
 	protected Task TransformBasicDeckCard<TReplacement>(CardTag tag)
@@ -53,6 +68,12 @@ public abstract partial class IntegratedStrategyEventModel
 		return IntegratedStrategyEventEffects.CountRemovableDeckCards(OwnerOrThrow) >= count;
 	}
 
+	protected bool AllPlayersHaveRemovableDeckCards(int count)
+	{
+		return OwnerOrThrow.RunState.Players.All(player =>
+			IntegratedStrategyEventEffects.CountRemovableDeckCards(player) >= count);
+	}
+
 	protected Task RemoveRandomDeckCards(int count)
 	{
 		return IntegratedStrategyEventEffects.RemoveRandomDeckCards(OwnerOrThrow, count);
@@ -61,6 +82,12 @@ public abstract partial class IntegratedStrategyEventModel
 	protected bool HasRemovableDeckCards(CardType type, int count)
 	{
 		return IntegratedStrategyEventEffects.CountRemovableDeckCards(OwnerOrThrow, type) >= count;
+	}
+
+	protected bool AllPlayersHaveRemovableDeckCards(CardType type, int count)
+	{
+		return OwnerOrThrow.RunState.Players.All(player =>
+			IntegratedStrategyEventEffects.CountRemovableDeckCards(player, type) >= count);
 	}
 
 	protected Task RemoveDeckCards(int count, CardType type)

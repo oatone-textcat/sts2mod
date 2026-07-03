@@ -1,6 +1,7 @@
 using IntegratedStrategyEvents.TreeHoles;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace IntegratedStrategyEvents.Events;
 
@@ -11,12 +12,20 @@ public sealed partial class ForwardForestEvent : IntegratedStrategyEventModel
 	private const int MaxHpReward = 2;
 	private const int HealReward = 4;
 
+	public override bool IsShared => true;
+
+	internal static bool CanEnterTreeHoleForAllPlayers(IRunState state)
+	{
+		return state.Players.All(player =>
+			IntegratedStrategyEventEffects.CanLoseMaxHp(player, TreeTopMaxHpLoss));
+	}
+
 	protected override IReadOnlyList<EventOption> GenerateInitialOptions()
 	{
 		Player owner = OwnerOrThrow;
 		return
 		[
-			CanLoseMaxHp(owner, TreeTopMaxHpLoss)
+			CanLoseMaxHp(owner, TreeTopMaxHpLoss) && CanEnterTreeHoleForAllPlayers(owner.RunState)
 				? Choice(ClimbIntoTreeHole, "TREE_TOP")
 				: LockedChoice("TREE_TOP_LOCKED"),
 			Choice(ChopForest, "CHOP_FOREST")
@@ -38,7 +47,7 @@ public sealed partial class ForwardForestEvent : IntegratedStrategyEventModel
 
 	private ForestOutcome DrawOutcome()
 	{
-		return OwnerOrThrow.PlayerRng.Rewards.NextInt(4) switch
+		return Rng.NextInt(4) switch
 		{
 			0 => new ForestOutcome("CHOP_GOLD", "CLAIM_GOLD", static eventModel => eventModel.GainGold(GoldReward)),
 			1 => new ForestOutcome("CHOP_MAX_HP", "CLAIM_MAX_HP", static eventModel => eventModel.GainMaxHp(MaxHpReward)),

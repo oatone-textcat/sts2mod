@@ -75,5 +75,9 @@
 
   "HESITATION_RELIC.title": "“犹疑”",
   "HESITATION_RELIC.description": "没有任何作用。",
-  "HESITATION_RELIC.flavor": "水月的海嗣本能压过人性后产生自我怀疑的具象表征。只要这种身份认知还不明晰，就仍会对水月造成不良影响。"
+  "HESITATION_RELIC.flavor": "水月的海嗣本能压过人性后产生自我怀疑的具象表征。只要这种身份认知还不明晰，就仍会对水月造成不良影响。",
+
+  "ROLLING_ANCESTORS_RELIC.title": "滚动先祖",
+  "ROLLING_ANCESTORS_RELIC.description": "战斗开始时，所有敌人获得[blue]2[/blue]层[gold]人工制品[/gold]。",
+  "ROLLING_ANCESTORS_RELIC.flavor": "哦不，先祖们来了，先祖们想要体验更刺激的……"
 }

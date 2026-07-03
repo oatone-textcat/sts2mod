@@ -75,5 +75,9 @@
 
   "HESITATION_RELIC.title": "\"Hesitation\"",
   "HESITATION_RELIC.description": "No effect.",
-  "HESITATION_RELIC.flavor": "A concrete form of Mizuki's self-doubt after his Seaborn instinct overwhelms his humanity. As long as this identity remains unclear, it will continue to harm him."
+  "HESITATION_RELIC.flavor": "A concrete form of Mizuki's self-doubt after his Seaborn instinct overwhelms his humanity. As long as this identity remains unclear, it will continue to harm him.",
+
+  "ROLLING_ANCESTORS_RELIC.title": "Rolling Ancestors",
+  "ROLLING_ANCESTORS_RELIC.description": "At the start of combat, all enemies gain [blue]2[/blue] [gold]Artifact[/gold].",
+  "ROLLING_ANCESTORS_RELIC.flavor": "Oh no, the ancestors are here. They want to experience something even more thrilling..."
 }

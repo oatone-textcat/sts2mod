@@ -64,36 +64,17 @@ internal static partial class IntegratedStrategyEventEffects
 
 	public static async Task DiscardPotionAndRemoveSlot(Player owner, PotionModel potion)
 	{
-		int slotIndex = owner.GetPotionSlotIndex(potion);
-		if (slotIndex < 0)
+		if (owner.GetPotionSlotIndex(potion) < 0)
 		{
 			return;
 		}
 
 		await DiscardPotion(potion);
-		MoveEmptyPotionSlotToEnd(owner, slotIndex);
 
 		if (owner.MaxPotionCount > 0)
 		{
 			await PlayerCmd.LoseMaxPotionCount(1, owner);
 		}
-	}
-
-	private static void MoveEmptyPotionSlotToEnd(Player owner, int emptySlotIndex)
-	{
-		if (owner.PotionSlots is not List<PotionModel?> slots ||
-			emptySlotIndex < 0 ||
-			emptySlotIndex >= slots.Count)
-		{
-			return;
-		}
-
-		for (int i = emptySlotIndex; i < slots.Count - 1; i++)
-		{
-			slots[i] = slots[i + 1];
-		}
-
-		slots[^1] = null;
 	}
 
 	public static async Task ReplaceRelicWithRandomRelic(Player owner, RelicModel relic)

@@ -7,6 +7,8 @@ public sealed partial class TruthToBeToldEvent : IntegratedStrategyEventModel
 {
 	private const int CompleteFlawCardCount = 2;
 
+	public override bool IsShared => true;
+
 	protected override IReadOnlyList<EventOption> GenerateInitialOptions()
 	{
 		return

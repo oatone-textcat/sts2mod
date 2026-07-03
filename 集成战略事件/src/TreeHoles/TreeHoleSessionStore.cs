@@ -7,7 +7,10 @@ internal sealed class TreeHoleSessionStore
 	private readonly Dictionary<RunState, TreeHoleSession> _treeHoleSessions = [];
 	private readonly Dictionary<RunState, EndlessFinaleSession> _finaleSessions = [];
 	private readonly Dictionary<RunState, TreeHoleRestoreSnapshot> _pendingRestoreSnapshots = [];
+	private readonly HashSet<RunState> _pendingTreeHoleEntries = [];
+	private readonly Dictionary<RunState, DateTime> _pendingTreeHoleReturns = [];
 	private readonly HashSet<RunState> _pendingFinaleEntries = [];
+	private readonly HashSet<RunState> _terminalRewardsProceeded = [];
 	private readonly HashSet<RunState> _pendingArchitectCompletions = [];
 	private readonly HashSet<RunState> _suppressCompletionUntilTerminalProceed = [];
 
@@ -76,6 +79,53 @@ internal sealed class TreeHoleSessionStore
 		return _suppressCompletionUntilTerminalProceed.Remove(state);
 	}
 
+	public bool AddPendingTreeHoleEntry(RunState state)
+	{
+		return _pendingTreeHoleEntries.Add(state);
+	}
+
+	public bool RemovePendingTreeHoleEntry(RunState state)
+	{
+		return _pendingTreeHoleEntries.Remove(state);
+	}
+
+	public bool AddPendingTreeHoleReturn(RunState state)
+	{
+		if (_pendingTreeHoleReturns.ContainsKey(state))
+		{
+			return false;
+		}
+
+		_pendingTreeHoleReturns[state] = DateTime.UtcNow;
+		return true;
+	}
+
+	public bool IsPendingTreeHoleReturnExpired(RunState state, TimeSpan timeout)
+	{
+		return _pendingTreeHoleReturns.TryGetValue(state, out DateTime requestedAt) &&
+			DateTime.UtcNow - requestedAt > timeout;
+	}
+
+	public bool RemovePendingTreeHoleReturn(RunState state)
+	{
+		return _pendingTreeHoleReturns.Remove(state);
+	}
+
+	public void AddTerminalRewardsProceeded(RunState state)
+	{
+		_terminalRewardsProceeded.Add(state);
+	}
+
+	public bool HasTerminalRewardsProceeded(RunState state)
+	{
+		return _terminalRewardsProceeded.Contains(state);
+	}
+
+	public bool RemoveTerminalRewardsProceeded(RunState state)
+	{
+		return _terminalRewardsProceeded.Remove(state);
+	}
+
 	public bool AddPendingFinaleEntry(RunState state)
 	{
 		return _pendingFinaleEntries.Add(state);
@@ -113,7 +163,10 @@ internal sealed class TreeHoleSessionStore
 			_pendingRestoreSnapshots[state] = pendingRestoreSnapshot;
 		}
 
+		_pendingTreeHoleEntries.Clear();
+		_pendingTreeHoleReturns.Clear();
 		_pendingFinaleEntries.Clear();
+		_terminalRewardsProceeded.Clear();
 		_pendingArchitectCompletions.Clear();
 		_suppressCompletionUntilTerminalProceed.Clear();
 		if (suppressCompletionUntilTerminalProceed)

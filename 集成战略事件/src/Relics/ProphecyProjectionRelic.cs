@@ -113,7 +113,8 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 			return;
 		}
 
-		ICombatState? combatState = Owner.Creature.CombatState;
+		Creature ownerCreature = Owner.Creature;
+		ICombatState? combatState = ownerCreature.CombatState;
 		if (combatState == null)
 		{
 			return;
@@ -151,7 +152,7 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 		Flash();
 		await CreatureCmd.Add(creature);
 		PositionSpawnedChorale(creature);
-		await PowerCmd.Apply<MinionPower>(creature, 1m, Owner.Creature, null, silent: true);
+		await PowerCmd.Apply<MinionPower>(creature, 1m, ownerCreature, null, silent: true);
 
 		TrackChorale(creature, rewardAuthority: true);
 	}
@@ -265,12 +266,16 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 			return Task.CompletedTask;
 		}
 
-		for (int i = 0; i < RandomRelicRewardCount; i++)
+		foreach (Player player in room.CombatState.Players)
 		{
-			room.AddExtraReward(Owner, new RelicReward(Owner));
+			for (int i = 0; i < RandomRelicRewardCount; i++)
+			{
+				room.AddExtraReward(player, new RelicReward(player));
+			}
+
+			room.AddExtraReward(player, new RelicReward(ModelDb.Relic<EndlessKeyRelic>().ToMutable(), player));
 		}
 
-		room.AddExtraReward(Owner, new RelicReward(ModelDb.Relic<EndlessKeyRelic>().ToMutable(), Owner));
 		SetSharedChoraleRewardsGranted(room.CombatState);
 		ClearCombatTracking();
 		return Task.CompletedTask;
@@ -305,8 +310,15 @@ public sealed class ProphecyProjectionRelic : IntegratedStrategyEventRelic
 
 	private static ProphecyProjectionRelic? GetChoraleAuthority(ICombatState combatState)
 	{
-		return GetActiveProjectionRelics(combatState)
-			.FirstOrDefault(static projection => !projection._choraleDefeated && projection._choraleHp > 0);
+		List<ProphecyProjectionRelic> projections = GetActiveProjectionRelics(combatState).ToList();
+		int initialHp = GetInitialChoraleHp(combatState);
+		return projections.FirstOrDefault(projection =>
+				!projection._choraleDefeated &&
+				!projection._choraleRewardsGranted &&
+				projection.GetNormalizedChoraleHp(initialHp) > 0) ??
+			projections.FirstOrDefault(static projection =>
+				!projection._choraleDefeated &&
+				!projection._choraleRewardsGranted);
 	}
 
 	private static ProphecyProjectionRelic? GetRewardAuthority(ICombatState combatState)

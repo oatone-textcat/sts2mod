@@ -160,7 +160,7 @@ public sealed class KuilongMahasattvaAvatar : MonsterModel
 
 		_phase = Phase.Free;
 		SetMoveImmediate(_freeFirstState, forceTransition: true);
-		await PowerCmd.Remove<NonAttachmentPower>(Creature);
+		await RemoveAllPowers();
 		await MonsterAnimationHelper.TriggerAnimWithFixedWait(Creature, EnterFreePhaseTrigger, PhaseTransitionDelay);
 		Creature.HpDisplay = HpDisplay.Normal;
 		await CreatureCmd.SetMaxAndCurrentHp(Creature, GetScaledPhaseHp());
@@ -391,6 +391,15 @@ public sealed class KuilongMahasattvaAvatar : MonsterModel
 	private bool IsSummonSlotOccupied(string slotName)
 	{
 		return CombatState?.Enemies.Any(creature => creature.IsAlive && creature.SlotName == slotName) == true;
+	}
+
+	private async Task RemoveAllPowers()
+	{
+		PowerModel[] powers = Creature.Powers.ToArray();
+		foreach (PowerModel power in powers)
+		{
+			await PowerCmd.Remove(power);
+		}
 	}
 
 	private async Task RemoveDebuffs()

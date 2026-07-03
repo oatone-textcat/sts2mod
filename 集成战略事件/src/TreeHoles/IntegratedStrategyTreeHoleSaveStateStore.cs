@@ -10,7 +10,7 @@ namespace IntegratedStrategyEvents.TreeHoles;
 
 internal static class IntegratedStrategyTreeHoleSaveStateStore
 {
-	private const int CurrentVersion = 1;
+	private const int CurrentVersion = 2;
 	private const string StateFileName = "integrated_strategy_tree_hole_state.json";
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
 	{
@@ -31,12 +31,15 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 				Kind = snapshot.Kind.ToString(),
 				CurrentActIndex = snapshot.CurrentActIndex,
 				CurrentActFloor = snapshot.CurrentActFloor,
+				CurrentMapCoord = snapshot.CurrentMapCoord,
 				OriginalMap = SerializableActMap.FromActMap(snapshot.OriginalMap),
 				OriginalVisitedMapCoords = snapshot.OriginalVisitedMapCoords.ToList(),
 				OriginalMapPointHistoryCounts = snapshot.OriginalMapPointHistory
 					.Select(static history => history.Count)
 					.ToList(),
 				OriginalActFloor = snapshot.OriginalActFloor,
+				OriginalActSave = snapshot.OriginalActSave,
+				TreeHoleMapSeed = snapshot.TreeHoleMapSeed,
 				StageLabel = snapshot.StageLabel,
 				DestinationActName = snapshot.DestinationActName,
 				TerminalCoord = snapshot.TerminalCoord
@@ -76,6 +79,7 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 				kind,
 				state.CurrentActIndex,
 				state.Map,
+				state.CurrentMapCoord,
 				state.VisitedMapCoords.ToList(),
 				state.MapPointHistory.Select(static history => history.ToList()).ToList(),
 				state.ActFloor,
@@ -83,6 +87,8 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 				finaleSession.OriginalVisitedMapCoords,
 				finaleSession.OriginalMapPointHistory,
 				finaleSession.OriginalActFloor,
+				finaleSession.OriginalActSave,
+				0U,
 				finaleSession.StageLabel,
 				finaleSession.DestinationActName,
 				finaleSession.FinaleMap.BossMapPoint.coord);
@@ -92,6 +98,7 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 			TreeHoleSaveKind.TreeHole,
 			state.CurrentActIndex,
 			state.Map,
+			state.CurrentMapCoord,
 			state.VisitedMapCoords.ToList(),
 			state.MapPointHistory.Select(static history => history.ToList()).ToList(),
 			state.ActFloor,
@@ -99,6 +106,8 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 			session.OriginalVisitedMapCoords,
 			session.OriginalMapPointHistory,
 			session.OriginalActFloor,
+			session.OriginalActSave,
+			session.TreeHoleMapSeed,
 			session.StageLabel,
 			session.DestinationActName,
 			session.TerminalCoord);
@@ -118,7 +127,7 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 				File.ReadAllText(path),
 				JsonOptions);
 			if (state == null ||
-				state.Version != CurrentVersion ||
+				(state.Version != 1 && state.Version != CurrentVersion) ||
 				state.StartTime != save.StartTime ||
 				state.CurrentActIndex != save.CurrentActIndex ||
 				state.OriginalMap == null ||
@@ -127,14 +136,30 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 				return null;
 			}
 
+			SerializableActModel? originalActSave = state.OriginalActSave;
+			if (originalActSave == null &&
+				state.CurrentActIndex >= 0 &&
+				state.CurrentActIndex < save.Acts.Count)
+			{
+				originalActSave = save.Acts[state.CurrentActIndex];
+			}
+
+			if (originalActSave == null)
+			{
+				return null;
+			}
+
 			return new TreeHoleRestoreSnapshot(
 				kind,
 				state.CurrentActIndex,
 				state.CurrentActFloor,
+				state.CurrentMapCoord,
 				state.OriginalMap,
 				state.OriginalVisitedMapCoords ?? [],
 				state.OriginalMapPointHistoryCounts ?? [],
 				state.OriginalActFloor,
+				originalActSave,
+				state.TreeHoleMapSeed,
 				state.StageLabel ?? string.Empty,
 				state.DestinationActName ?? string.Empty,
 				state.TerminalCoord);
@@ -181,6 +206,8 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 
 		public int CurrentActFloor { get; set; }
 
+		public MapCoord? CurrentMapCoord { get; set; }
+
 		public SerializableActMap? OriginalMap { get; set; }
 
 		public List<MapCoord>? OriginalVisitedMapCoords { get; set; }
@@ -188,6 +215,10 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 		public List<int>? OriginalMapPointHistoryCounts { get; set; }
 
 		public int OriginalActFloor { get; set; }
+
+		public SerializableActModel? OriginalActSave { get; set; }
+
+		public uint TreeHoleMapSeed { get; set; }
 
 		public string? StageLabel { get; set; }
 

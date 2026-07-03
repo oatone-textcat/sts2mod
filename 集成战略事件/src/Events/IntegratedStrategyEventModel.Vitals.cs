@@ -14,6 +14,12 @@ public abstract partial class IntegratedStrategyEventModel
 		return IntegratedStrategyEventEffects.CanLoseHp(owner, amount);
 	}
 
+	protected bool AllPlayersCanLoseHp(int amount)
+	{
+		return OwnerOrThrow.RunState.Players.All(player =>
+			IntegratedStrategyEventEffects.CanLoseHp(player, amount));
+	}
+
 	protected bool CanLoseMaxHp(int amount)
 	{
 		return CanLoseMaxHp(OwnerOrThrow, amount);
@@ -22,6 +28,12 @@ public abstract partial class IntegratedStrategyEventModel
 	protected static bool CanLoseMaxHp(Player owner, int amount)
 	{
 		return IntegratedStrategyEventEffects.CanLoseMaxHp(owner, amount);
+	}
+
+	protected bool AllPlayersCanLoseMaxHp(int amount)
+	{
+		return OwnerOrThrow.RunState.Players.All(player =>
+			IntegratedStrategyEventEffects.CanLoseMaxHp(player, amount));
 	}
 
 	protected Task LoseHp(int amount)

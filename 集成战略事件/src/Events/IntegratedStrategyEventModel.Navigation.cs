@@ -25,7 +25,7 @@ public abstract partial class IntegratedStrategyEventModel
 		string lockedOptionKey,
 		string pageKey = InitialPage)
 	{
-		return owner.Gold >= cost
+		return owner.Gold >= cost && (!IsShared || AllPlayersHaveGold(cost))
 			? Choice(onChosen, optionKey, pageKey)
 			: LockedChoice(lockedOptionKey, pageKey);
 	}
@@ -38,9 +38,14 @@ public abstract partial class IntegratedStrategyEventModel
 		string lockedOptionKey,
 		string pageKey = InitialPage)
 	{
-		return CanLoseHp(owner, hpLoss)
+		return CanLoseHp(owner, hpLoss) && (!IsShared || AllPlayersCanLoseHp(hpLoss))
 			? Choice(onChosen, optionKey, pageKey).ThatDoesDamage(hpLoss)
 			: LockedChoice(lockedOptionKey, pageKey);
+	}
+
+	protected bool AllPlayersHaveGold(int cost)
+	{
+		return OwnerOrThrow.RunState.Players.All(player => player.Gold >= cost);
 	}
 
 	protected void ShowPage(string pageKey, IReadOnlyList<EventOption> options)

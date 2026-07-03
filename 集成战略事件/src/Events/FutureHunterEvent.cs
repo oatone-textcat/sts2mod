@@ -15,10 +15,12 @@ public sealed partial class FutureHunterEvent : IntegratedStrategyEventModel
 		return
 		[
 			Choice(Refuse, "REFUSE"),
-			HasRemovableDeckCards(CardType.Skill, CardsToRemove)
+			HasRemovableDeckCards(CardType.Skill, CardsToRemove) &&
+				AllPlayersHaveRemovableDeckCards(CardType.Skill, CardsToRemove)
 				? Choice(OfferHope, "OFFER_HOPE")
 				: LockedChoice("OFFER_HOPE_LOCKED"),
-			HasRemovableDeckCards(CardType.Attack, CardsToRemove)
+			HasRemovableDeckCards(CardType.Attack, CardsToRemove) &&
+				AllPlayersHaveRemovableDeckCards(CardType.Attack, CardsToRemove)
 				? Choice(OfferHatred, "OFFER_HATRED")
 				: LockedChoice("OFFER_HATRED_LOCKED"),
 			Choice(Leave, "LEAVE")

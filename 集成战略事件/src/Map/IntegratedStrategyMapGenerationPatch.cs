@@ -30,6 +30,48 @@ internal static class IntegratedStrategyFirstEventPatch
 	private const int FirstEventBranchCount = 4;
 	private static readonly ConditionalWeakTable<RunState, FirstEventChoice> FirstEventChoices = new();
 
+	public static bool TryGetForcedEventType(RunState runState, out Type eventType)
+	{
+		if (IntegratedStrategyTreeHoleController.IsAtProphetHornFragmentEventPoint(runState))
+		{
+			eventType = typeof(AnomalousReportEvent);
+			return true;
+		}
+
+		if (IntegratedStrategyTreeHoleController.IsAtEternalDustFirstEventPoint(runState))
+		{
+			eventType = typeof(ReconstructionEvent);
+			return true;
+		}
+
+		if (IntegratedStrategyTreeHoleController.IsAtEternalDustSecondEventPoint(runState))
+		{
+			eventType = typeof(ExplorerSmallStepEvent);
+			return true;
+		}
+
+		if (IntegratedStrategyTreeHoleController.IsAtAbyssalJungleSublimationEventPoint(runState))
+		{
+			eventType = typeof(SublimationEvent);
+			return true;
+		}
+
+		if (IntegratedStrategyTreeHoleController.IsAtAbyssalJungleOdeEventPoint(runState))
+		{
+			eventType = typeof(OdeEvent);
+			return true;
+		}
+
+		if (ShouldForceSecondActOpeningEvent(runState))
+		{
+			eventType = GetSecondActOpeningEventType(runState);
+			return true;
+		}
+
+		eventType = null!;
+		return false;
+	}
+
 	private static bool Prefix(RoomSet __instance, RunState runState)
 	{
 		if (__instance.events.Count == 0)
@@ -99,9 +141,7 @@ internal static class IntegratedStrategyFirstEventPatch
 			return false;
 		}
 
-		if (runState.CurrentActIndex != SecondActIndex ||
-			IntegratedStrategyTreeHoleController.IsActive(runState) ||
-			HasVisitedOrdinaryEventInCurrentAct(runState))
+		if (!ShouldForceSecondActOpeningEvent(runState))
 		{
 			return true;
 		}
@@ -141,6 +181,39 @@ internal static class IntegratedStrategyFirstEventPatch
 			unchecked((uint)runState.CurrentActIndex));
 		MegaCrit.Sts2.Core.Random.Rng rng = new(seed, "integrated_strategy_second_act_opening_event");
 		return new FirstEventChoice((FirstEventBranch)rng.NextInt(FirstEventBranchCount));
+	}
+
+	private static Type GetSecondActOpeningEventType(RunState runState)
+	{
+		FirstEventChoice choice = FirstEventChoices.GetValue(
+			runState,
+			ChooseFirstEvent);
+
+		return choice.Branch switch
+		{
+			FirstEventBranch.Change => typeof(ChangeEvent),
+			FirstEventBranch.PrimordialDivergence => typeof(PrimordialDivergenceEvent),
+			FirstEventBranch.Beginning => typeof(BeginningEvent),
+			_ => typeof(VoidPortentEvent)
+		};
+	}
+
+	public static bool ShouldForceSecondActOpeningEvent(RunState runState)
+	{
+		return runState.CurrentActIndex == SecondActIndex &&
+			!IntegratedStrategyTreeHoleController.IsActive(runState) &&
+			IsAtUnknownMapPoint(runState) &&
+			!HasVisitedOrdinaryEventInCurrentAct(runState);
+	}
+
+	private static bool IsAtUnknownMapPoint(RunState runState)
+	{
+		if (!runState.CurrentMapCoord.HasValue)
+		{
+			return false;
+		}
+
+		return runState.Map.GetPoint(runState.CurrentMapCoord.Value) is { PointType: MapPointType.Unknown };
 	}
 
 	private static bool HasVisitedOrdinaryEventInCurrentAct(RunState runState)

@@ -46,7 +46,7 @@ public sealed partial class NorthernWizardArenaEvent : IntegratedStrategyEventMo
 
 	private ArenaOutcome DrawOutcome()
 	{
-		int roll = OwnerOrThrow.PlayerRng.Rewards.NextInt(100);
+		int roll = Rng.NextInt(100);
 		if (roll < 20)
 		{
 			return ArenaOutcome.HornRock;

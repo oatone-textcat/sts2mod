@@ -18,7 +18,7 @@ public sealed partial class SeabornScholarEvent : IntegratedStrategyEventModel
 	private async Task TryPrototype()
 	{
 		await ObtainRandomRelic();
-		if (OwnerOrThrow.PlayerRng.Rewards.NextBool())
+		if (Rng.NextBool())
 		{
 			await GrantRandomPoolCard<CurseCardPool>(CardRarity.Curse);
 		}

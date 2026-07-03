@@ -48,6 +48,12 @@ public abstract partial class IntegratedStrategyEventModel
 		return IntegratedStrategyEventEffects.GetMostRecentlyObtainedRelic(OwnerOrThrow);
 	}
 
+	protected bool AllPlayersHaveMostRecentlyObtainedRelic()
+	{
+		return OwnerOrThrow.RunState.Players.All(static player =>
+			IntegratedStrategyEventEffects.GetMostRecentlyObtainedRelic(player) != null);
+	}
+
 	protected PotionModel? GetMostRecentlyObtainedPotion()
 	{
 		return IntegratedStrategyEventEffects.GetMostRecentlyObtainedPotion(OwnerOrThrow);

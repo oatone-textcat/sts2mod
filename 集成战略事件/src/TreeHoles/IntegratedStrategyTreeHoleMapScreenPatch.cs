@@ -30,12 +30,12 @@ internal static class IntegratedStrategyTreeHoleMapScreenPatch
 			return;
 		}
 
-		if (map is IntegratedStrategyEndlessFinaleActMap ||
-			IntegratedStrategyTreeHoleController.IsCurrentEndlessFinaleMap(map))
+		if (IsEndlessFinaleMap(map))
 		{
 			HideSpecialPoint(__instance, "_startingPointNode");
 			HideSpecialPaths(__instance, map.StartingMapPoint.coord, map.BossMapPoint.coord);
 			StyleEndlessFinaleBossNode(__instance);
+			EnsureEndlessFinaleBossTravelable(__instance);
 			return;
 		}
 
@@ -89,6 +89,46 @@ internal static class IntegratedStrategyTreeHoleMapScreenPatch
 		bossPoint.Position = new Vector2(-80f, -520f);
 		bossPoint.Scale = Vector2.One * 2.5f;
 		bossPoint.ZIndex = 10;
+	}
+
+	internal static void EnsureEndlessFinaleBossTravelable(NMapScreen screen)
+	{
+		if (AccessTools.Field(typeof(NMapScreen), "_map")?.GetValue(screen) is not ActMap map ||
+			!IsEndlessFinaleMap(map) ||
+			AccessTools.Field(typeof(NMapScreen), "_runState")?.GetValue(screen) is not RunState state ||
+			AccessTools.Field(typeof(NMapScreen), "_bossPointNode")?.GetValue(screen) is not NBossMapPoint bossPoint ||
+			state.VisitedMapCoords.Count == 0)
+		{
+			return;
+		}
+
+		MapCoord lastVisitedCoord = state.VisitedMapCoords[state.VisitedMapCoords.Count - 1];
+		if (lastVisitedCoord.Equals(map.StartingMapPoint.coord))
+		{
+			bossPoint.State = MapPointState.Travelable;
+		}
+	}
+
+	private static bool IsEndlessFinaleMap(ActMap map)
+	{
+		return map is IntegratedStrategyEndlessFinaleActMap ||
+			IntegratedStrategyTreeHoleController.IsCurrentEndlessFinaleMap(map) ||
+			HasEndlessFinaleTopology(map);
+	}
+
+	// 存档/联机往返后地图会被反序列化为 SavedActMap，类型与会话实例检查都会
+	// 失效，导致 BOSS 节点停留在原版硬编码位置（地图区域外左上）。该 7×2、
+	// 网格为空、起点(3,0)先古 + BOSS(3,1) 的形状只有阿米娅终局层会出现，
+	// 按拓扑识别兜底。
+	private static bool HasEndlessFinaleTopology(ActMap map)
+	{
+		return map is SavedActMap &&
+			map.GetColumnCount() == 7 &&
+			map.GetRowCount() == 2 &&
+			map.BossMapPoint.coord.Equals(new MapCoord(3, 1)) &&
+			map.StartingMapPoint.coord.Equals(new MapCoord(3, 0)) &&
+			map.StartingMapPoint.PointType == MapPointType.Ancient &&
+			!map.GetAllMapPoints().Any();
 	}
 
 	private static void HideSpecialPoint(NMapScreen screen, string fieldName)
@@ -149,6 +189,18 @@ internal static class IntegratedStrategyTreeHoleMapOpenPatch
 	}
 }
 
+[HarmonyPatch(typeof(NMapScreen), "RecalculateTravelability")]
+internal static class IntegratedStrategyTreeHoleMapTravelabilityPatch
+{
+	private static void Postfix(NMapScreen __instance)
+	{
+		IntegratedStrategyTreeHoleMapScreenPatch.EnsureEndlessFinaleBossTravelable(__instance);
+		// 常驻重试点：终局返回请求若丢失，玩家停留在打开的地图上时该方法会被反复
+		// 调用，配合超时重发保证最终能返回大地图。
+		IntegratedStrategyTreeHoleController.TryRestoreCompletedCurrentRun();
+	}
+}
+
 [HarmonyPatch(typeof(RunManager), nameof(RunManager.ProceedFromTerminalRewardsScreen))]
 internal static class IntegratedStrategyTreeHoleTerminalRewardsProceedPatch
 {
@@ -160,6 +212,9 @@ internal static class IntegratedStrategyTreeHoleTerminalRewardsProceedPatch
 	private static async Task RestoreTreeHoleAfterTerminalProceed(Task proceedTask)
 	{
 		await proceedTask;
+		// 无论本次恢复是否成功，terminal proceed 已发生：记录标记并解除读档
+		// suppression，让后续 SetMap/Open/RecalculateTravelability 的重试可用。
+		IntegratedStrategyTreeHoleController.MarkTerminalRewardsProceededCurrentRun();
 		IntegratedStrategyTreeHoleController.TryRestoreCompletedCurrentRunAfterTerminalProceed();
 	}
 }

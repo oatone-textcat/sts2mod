@@ -24,6 +24,7 @@ internal static partial class IntegratedStrategyContentCatalog
 		typeof(DeepBlueMemoryRelic),
 		typeof(DeterminationRelic),
 		typeof(ObservationRelic),
-		typeof(HesitationRelic)
+		typeof(HesitationRelic),
+		typeof(RollingAncestorsRelic)
 	];
 }

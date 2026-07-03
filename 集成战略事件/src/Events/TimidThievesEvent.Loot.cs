@@ -26,7 +26,7 @@ public sealed partial class TimidThievesEvent
 			throw new ArgumentOutOfRangeException(nameof(outcomeCount), outcomeCount, null);
 		}
 
-		return (LootBranch)OwnerOrThrow.PlayerRng.Rewards.NextInt(outcomeCount);
+		return (LootBranch)Rng.NextInt(outcomeCount);
 	}
 
 	private void ShowLootPage(LootBranch branch)

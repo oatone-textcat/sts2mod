@@ -1,8 +1,10 @@
 using MegaCrit.Sts2.Core.Logging;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
+using MegaCrit.Sts2.Core.Random;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Runs.History;
@@ -38,7 +40,12 @@ internal static class TreeHoleSessionManager
 			return false;
 		}
 
-		if (state.CurrentRoom is not MapRoom)
+		// 终局奖励 proceed 之后房间会一直停留在 Treasure/Combat（不会再进 MapRoom），
+		// 若 proceed 时的单次返回请求丢失，只认 MapRoom 会让玩家永久卡在树洞层；
+		// proceed 标记 + 房间已结算(IsPreFinished) 时同样允许触发返回。
+		if (state.CurrentRoom is not MapRoom &&
+			!(SessionStore.HasTerminalRewardsProceeded(state) &&
+			  state.CurrentRoom is { IsPreFinished: true }))
 		{
 			return false;
 		}
@@ -48,8 +55,21 @@ internal static class TreeHoleSessionManager
 			return false;
 		}
 
-		RestoreOriginalMap(state, session);
-		return true;
+		return RequestRestoreOriginalMap(state, session);
+	}
+
+	// 终局奖励 proceed 已发生：记录标记供上面的门禁重试使用，并解除读档路径设下的
+	// completion suppression——即使本次单发恢复因 session 尚未装回而打空，后续
+	// SetMap/Open/RecalculateTravelability 的重试也不再被封死。
+	public static void MarkTerminalRewardsProceededCurrentRun()
+	{
+		if (RunManager.Instance.DebugOnlyGetState() is not RunState state)
+		{
+			return;
+		}
+
+		SessionStore.AddTerminalRewardsProceeded(state);
+		SessionStore.RemoveCompletionSuppression(state);
 	}
 
 	public static bool TryRestoreCompletedCurrentRunAfterTerminalProceed()
@@ -77,8 +97,7 @@ internal static class TreeHoleSessionManager
 			return false;
 		}
 
-		RestoreOriginalMap(state, session);
-		return true;
+		return RequestRestoreOriginalMap(state, session);
 	}
 
 	public static bool TryGetCurrentDestination(out string actName)
@@ -153,7 +172,20 @@ internal static class TreeHoleSessionManager
 			return false;
 		}
 
-		if (state.CurrentActIndex != snapshot.CurrentActIndex || !MapContainsCoord(map, snapshot.TerminalCoord))
+		ActMap sessionMap = map;
+		bool rebuiltSessionMap = false;
+		if (snapshot.Kind == TreeHoleSaveKind.TreeHole &&
+			!MapContainsCoord(sessionMap, snapshot.TerminalCoord) &&
+			snapshot.TreeHoleMapSeed != 0)
+		{
+			sessionMap = IntegratedStrategyTreeHoleActMap.Create(new Rng(
+				snapshot.TreeHoleMapSeed,
+				"integrated_strategy_tree_hole_map_restore"));
+			state.Map = sessionMap;
+			rebuiltSessionMap = true;
+		}
+
+		if (state.CurrentActIndex != snapshot.CurrentActIndex || !MapContainsCoord(sessionMap, snapshot.TerminalCoord))
 		{
 			Log.Warn($"{ModInfo.LogPrefix} Ignored stale tree-hole restore snapshot.");
 			SessionStore.RemovePendingRestore(state);
@@ -171,9 +203,12 @@ internal static class TreeHoleSessionManager
 				snapshot.OriginalVisitedMapCoords,
 				originalHistory,
 				snapshot.OriginalActFloor,
+				snapshot.OriginalActSave,
+				snapshot.TreeHoleMapSeed,
+				snapshot.CurrentMapCoord,
 				snapshot.StageLabel,
 				snapshot.DestinationActName,
-				map,
+				sessionMap,
 				snapshot.TerminalCoord));
 		}
 		else
@@ -193,16 +228,21 @@ internal static class TreeHoleSessionManager
 				snapshot.OriginalVisitedMapCoords,
 				originalHistory,
 				snapshot.OriginalActFloor,
-				state.Act.ToSave(),
+				snapshot.OriginalActSave,
 				snapshot.StageLabel,
 				snapshot.DestinationActName,
-				map,
+				sessionMap,
 				finaleKind));
 		}
 
 		state.ActFloor = snapshot.CurrentActFloor;
 		SessionStore.RemovePendingRestore(state);
 		RefreshLocationSynchronizers(state);
+		if (rebuiltSessionMap)
+		{
+			SetMapScreen(sessionMap, state, initMarker: snapshot.CurrentMapCoord.HasValue);
+		}
+
 		Log.Info($"{ModInfo.LogPrefix} Restored {snapshot.Kind} tree-hole session from save.");
 		return true;
 	}
@@ -212,7 +252,7 @@ internal static class TreeHoleSessionManager
 		RunState? state = RunManager.Instance.DebugOnlyGetState();
 		return state != null &&
 			SessionStore.TryGetTreeHoleSession(state, out TreeHoleSession session) &&
-			ReferenceEquals(session.TreeHoleMap, map);
+			(ReferenceEquals(session.TreeHoleMap, map) || MapContainsCoord(map, session.TerminalCoord));
 	}
 
 	public static bool IsCurrentEndlessFinaleMap(ActMap map)
@@ -242,7 +282,7 @@ internal static class TreeHoleSessionManager
 			SessionStore.TryGetFinaleSession(state, out EndlessFinaleSession session) &&
 			(session.Kind == SpecialFinaleKind.AbyssalJungle ||
 			 session.Kind == SpecialFinaleKind.AbyssalJungleIsharmla) &&
-			ReferenceEquals(session.FinaleMap, map);
+			IsSessionFinaleMap(state, session, map);
 	}
 
 	public static bool IsCurrentProphetHornFragmentMap(ActMap map)
@@ -268,6 +308,16 @@ internal static class TreeHoleSessionManager
 	public static void SetFinaleSession(RunState state, EndlessFinaleSession session)
 	{
 		SessionStore.SetFinaleSession(state, session);
+	}
+
+	public static bool AddPendingTreeHoleEntry(RunState state)
+	{
+		return SessionStore.AddPendingTreeHoleEntry(state);
+	}
+
+	public static bool RemovePendingTreeHoleEntry(RunState state)
+	{
+		return SessionStore.RemovePendingTreeHoleEntry(state);
 	}
 
 	public static bool AddPendingFinaleEntry(RunState state)
@@ -303,7 +353,14 @@ internal static class TreeHoleSessionManager
 	public static void OnRoomEntered()
 	{
 		RunState? state = RunManager.Instance.DebugOnlyGetState();
-		if (state?.CurrentRoom is not MapRoom || !SessionStore.TryGetTreeHoleSession(state, out TreeHoleSession session))
+		if (state == null)
+		{
+			return;
+		}
+
+		// 进入新房间意味着上一个 proceed 标记已过期，避免陈旧标记让完结判定提前触发。
+		SessionStore.RemoveTerminalRewardsProceeded(state);
+		if (state.CurrentRoom is not MapRoom || !SessionStore.TryGetTreeHoleSession(state, out TreeHoleSession session))
 		{
 			return;
 		}
@@ -318,7 +375,36 @@ internal static class TreeHoleSessionManager
 			return;
 		}
 
+		RequestRestoreOriginalMap(state, session);
+	}
+
+	internal static Task RestoreOriginalMapFromSyncedAction(Player owner)
+	{
+		if (owner.RunState is not RunState state)
+		{
+			Log.Warn($"{ModInfo.LogPrefix} Tried to return from a tree-hole without a run state.");
+			return Task.CompletedTask;
+		}
+
+		if (!SessionStore.TryGetTreeHoleSession(state, out TreeHoleSession session))
+		{
+			// 联机 rejoin 端可能还挂着未消费的 pending restore：先尝试装回 session 再返回，
+			// 否则该端会在收到同步返回动作后仍卡在树洞层。
+			if (state.Map is { } currentMap &&
+				TryRestoreSavedSessionForCurrentRun(currentMap) &&
+				SessionStore.TryGetTreeHoleSession(state, out session))
+			{
+				RestoreOriginalMap(state, session);
+				return Task.CompletedTask;
+			}
+
+			SessionStore.RemovePendingTreeHoleReturn(state);
+			Log.Warn($"{ModInfo.LogPrefix} Ignored a tree-hole return request because no session was active.");
+			return Task.CompletedTask;
+		}
+
 		RestoreOriginalMap(state, session);
+		return Task.CompletedTask;
 	}
 
 	public static void RestoreOriginalMapForArchitect(RunState state, EndlessFinaleSession session)
@@ -441,13 +527,32 @@ internal static class TreeHoleSessionManager
 		return state != null &&
 			SessionStore.TryGetFinaleSession(state, out EndlessFinaleSession session) &&
 			session.Kind == kind &&
-			ReferenceEquals(session.FinaleMap, map);
+			IsSessionFinaleMap(state, session, map);
+	}
+
+	// 存档往返后 state.Map 会被反序列化为新的 SavedActMap 实例，纯引用比较会失配
+	// （表现为终局层的 BOSS 节点/起点样式修正不生效）；引用不同时退回
+	// "当前地图 + 拓扑一致"判断。
+	private static bool IsSessionFinaleMap(RunState state, EndlessFinaleSession session, ActMap map)
+	{
+		if (ReferenceEquals(session.FinaleMap, map))
+		{
+			return true;
+		}
+
+		return ReferenceEquals(state.Map, map) &&
+			map.GetColumnCount() == session.FinaleMap.GetColumnCount() &&
+			map.GetRowCount() == session.FinaleMap.GetRowCount() &&
+			map.BossMapPoint.coord.Equals(session.FinaleMap.BossMapPoint.coord) &&
+			map.StartingMapPoint.coord.Equals(session.FinaleMap.StartingMapPoint.coord);
 	}
 
 	private static void RestoreOriginalMap(RunState state, TreeHoleSession session)
 	{
 		SessionStore.RemoveCompletionSuppression(state);
+		SessionStore.RemoveTerminalRewardsProceeded(state);
 		SessionStore.RemoveTreeHoleSession(state);
+		SessionStore.RemovePendingTreeHoleReturn(state);
 		state.Map = session.OriginalMap;
 		state.ClearVisitedMapCoordsDebug();
 		foreach (MapCoord coord in session.OriginalVisitedMapCoords)
@@ -457,9 +562,40 @@ internal static class TreeHoleSessionManager
 
 		RestoreMapPointHistory(state, session.OriginalMapPointHistory);
 		state.ActFloor = session.OriginalActFloor;
+		TreeHoleRunAccessor.RestoreActRooms(state, session.OriginalActSave);
 		RefreshLocationSynchronizers(state);
 		SetMapScreen(session.OriginalMap, state, initMarker: state.CurrentMapCoord.HasValue);
 		Log.Info($"{ModInfo.LogPrefix} Returned from {session.DestinationActName} tree-hole.");
+	}
+
+	private static bool RequestRestoreOriginalMap(RunState state, TreeHoleSession session)
+	{
+		if (!SessionStore.AddPendingTreeHoleReturn(state))
+		{
+			// 入队的同步返回动作可能丢失/被吞（掉线滞留、战斗收尾期被取消、执行时
+			// 异常被静默记录）；超时后清除标志重发，而不是永远等待。
+			if (!SessionStore.IsPendingTreeHoleReturnExpired(state, TimeSpan.FromSeconds(5)))
+			{
+				return true;
+			}
+
+			Log.Warn($"{ModInfo.LogPrefix} Tree-hole return request seems lost; retrying.");
+			SessionStore.RemovePendingTreeHoleReturn(state);
+			SessionStore.AddPendingTreeHoleReturn(state);
+		}
+
+		Player? requester = state.Players.FirstOrDefault(static player => player.IsActiveForHooks) ??
+			state.Players.FirstOrDefault();
+		if (requester == null)
+		{
+			Log.Warn($"{ModInfo.LogPrefix} Falling back to local tree-hole return because no player was available.");
+			RestoreOriginalMap(state, session);
+			return true;
+		}
+
+		IntegratedStrategyTemporaryMapAction.EnqueueTreeHoleReturn(requester);
+		Log.Info($"{ModInfo.LogPrefix} Queued synced return from {session.DestinationActName} tree-hole.");
+		return true;
 	}
 
 	private static List<IReadOnlyList<MapPointHistoryEntry>> CopyHistoryByCounts(

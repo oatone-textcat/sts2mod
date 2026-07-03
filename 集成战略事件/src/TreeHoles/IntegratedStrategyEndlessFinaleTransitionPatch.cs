@@ -1,4 +1,5 @@
 using HarmonyLib;
+using IntegratedStrategyEvents.Map;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
@@ -65,6 +66,11 @@ internal static class IntegratedStrategyEndlessFinaleCreateRoomPatch
 		AbstractModel? model,
 		ref AbstractRoom __result)
 	{
+		if (!IntegratedStrategyForcedRoomController.HandleCreateRoom(roomType, mapPointType, model, ref __result))
+		{
+			return false;
+		}
+
 		return IntegratedStrategyTreeHoleController.HandleCreateRoom(roomType, model, ref __result);
 	}
 

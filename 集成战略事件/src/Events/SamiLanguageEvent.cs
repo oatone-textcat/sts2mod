@@ -59,4 +59,5 @@ public sealed partial class SamiLanguageEvent : IntegratedStrategyEventModel
 		return CanLoseMaxHp(owner, MaxHpLoss)
 			&& HasTransformableDeckCards(owner, TransformCardCount);
 	}
+
 }

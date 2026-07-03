@@ -11,6 +11,8 @@ public sealed partial class ShiftingCityEvent : IntegratedStrategyEventModel
 	private const string StrangeFragmentActName = "诡谲断章";
 	private const string StrangeFragmentStageLabel = "阶段∅";
 
+	public override bool IsShared => true;
+
 	protected override IReadOnlyList<EventOption> GenerateInitialOptions()
 	{
 		return

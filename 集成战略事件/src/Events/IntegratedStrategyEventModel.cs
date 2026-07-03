@@ -24,6 +24,8 @@ public abstract partial class IntegratedStrategyEventModel : CustomEventModel
 
 	public override ActModel[] Acts => IntegratedStrategyEventSpawnRules.GetActs(GetType());
 
+	public override bool IsShared => false;
+
 	public override bool IsAllowed(IRunState runState)
 	{
 		return IntegratedStrategyEventSpawnRules.IsAllowed(GetType(), runState);

@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 
 namespace IntegratedStrategyEvents.Powers;
@@ -37,7 +38,20 @@ public sealed class IzumikTransformationPower : PowerModel, ICustomPower
 			return;
 		}
 
-		await offspring.TransformIntoRandomEnemy();
+		// 变身失败绝不能让异常沿回合结束任务链上抛：该链由 fire-and-forget 的
+		// RunSafely 驱动，未捕获异常会静默中断回合切换，表现为战斗永久卡死。
+		try
+		{
+			await offspring.TransformIntoRandomEnemy();
+		}
+		catch (OperationCanceledException)
+		{
+			throw;
+		}
+		catch (Exception e)
+		{
+			Log.Error($"{ModInfo.LogPrefix} IzumikOffspring transform failed, skipping: {e}");
+		}
 	}
 
 	public void Pulse()
