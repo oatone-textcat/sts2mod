@@ -64,9 +64,9 @@
   "tatteredDollRelic.title": "Tattered Doll",
   "TATTERED_DOLL_RELIC.title": "Tattered Doll",
   "INTEGRATEDSTRATEGYEVENTS-TATTERED_DOLL_RELIC.title": "Tattered Doll",
-  "tatteredDollRelic.description": "Leads the expedition toward a different [gold]ending[/gold].",
-  "TATTERED_DOLL_RELIC.description": "Leads the expedition toward a different [gold]ending[/gold].",
-  "INTEGRATEDSTRATEGYEVENTS-TATTERED_DOLL_RELIC.description": "Leads the expedition toward a different [gold]ending[/gold].",
+  "tatteredDollRelic.description": "[red]Leads the expedition toward a different ending.[/red]",
+  "TATTERED_DOLL_RELIC.description": "[red]Leads the expedition toward a different ending.[/red]",
+  "INTEGRATEDSTRATEGYEVENTS-TATTERED_DOLL_RELIC.description": "[red]Leads the expedition toward a different ending.[/red]",
   "tatteredDollRelic.flavor": "\"He said he had had enough. He would no longer be a marionette in anyone's hands.\"",
   "TATTERED_DOLL_RELIC.flavor": "\"He said he had had enough. He would no longer be a marionette in anyone's hands.\"",
   "INTEGRATEDSTRATEGYEVENTS-TATTERED_DOLL_RELIC.flavor": "\"He said he had had enough. He would no longer be a marionette in anyone's hands.\""
