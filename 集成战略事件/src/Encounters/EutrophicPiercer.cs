@@ -24,8 +24,8 @@ public sealed class EutrophicPiercer : MonsterModel
 	public const string PierceMoveId = "PIERCE_MOVE";
 	public const string SuckMoveId = "SUCK_MOVE";
 
-	private const int InitialHp = 100;
-	private const int PierceDamage = 18;
+	private const int InitialHp = 120;
+	private const int PierceDamage = 20;
 	private const decimal InitialSuckAmount = 2m;
 	private const decimal SuckGain = 1m;
 	private const float PierceHitDelay = 0.55f;

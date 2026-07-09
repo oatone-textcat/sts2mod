@@ -1,4 +1,5 @@
-using BaseLib.Abstracts;
+using STS2RitsuLib.Scaffolding.Content;
+using STS2RitsuLib.Scaffolding.Content.Patches;
 using IntegratedStrategyEvents.Encounters;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -9,15 +10,17 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace IntegratedStrategyEvents.Powers;
 
-public abstract class DecisiveDuelPower<TPartnerMonster> : PowerModel, ICustomPower
+public abstract class DecisiveDuelPower<TPartnerMonster> : PowerModel, IModPowerAssetOverrides
 	where TPartnerMonster : MonsterModel
 {
+	public PowerAssetProfile AssetProfile => PowerAssetProfile.Empty;
+
 	private sealed class Data
 	{
 		public bool HasTriggered;
 	}
 
-	private const int StrengthGain = 10;
+	private const int StrengthGain = 12;
 	private const float VictoryAnimLength = 0.85f;
 	private const string JuggernautPowerPackedIconPath =
 		"res://images/atlases/power_atlas.sprites/juggernaut_power.tres";
@@ -27,7 +30,7 @@ public abstract class DecisiveDuelPower<TPartnerMonster> : PowerModel, ICustomPo
 
 	public override PowerStackType StackType => PowerStackType.Single;
 
-	public string? CustomPackedIconPath => JuggernautPowerPackedIconPath;
+	public string? CustomIconPath => JuggernautPowerPackedIconPath;
 
 	public string? CustomBigIconPath => JuggernautPowerBigIconPath;
 

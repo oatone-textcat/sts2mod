@@ -3,6 +3,7 @@ using IntegratedStrategyEvents.Map;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
@@ -19,6 +20,32 @@ internal static class IntegratedStrategyEndlessFinaleEnterNextActPatch
 	private static bool Prefix(RunManager __instance, ref Task __result)
 	{
 		return IntegratedStrategyTreeHoleController.HandleEnterNextAct(__instance, ref __result);
+	}
+}
+
+// 0.108 起 ActChangeSynchronizer.OnPlayerReady 新增"已从当前幕转换过则忽略"守卫
+// （_lastTransitioningActIndex），只对 TheArchitect 事件房（IsVictoryRoom）豁免。
+// 模组终局插层需要从同一幕序号二次转换（三幕BOSS→进终局消耗一次，终局BOSS→回建筑师再一次），
+// 第二次会被该守卫吞掉（表现为打完终局BOSS点继续无反应）。终局会话激活或建筑师交接待办时
+// 重置该记忆字段放行；真正过期投票的 actIndex < CurrentActIndex 防护不受影响。
+[HarmonyPatch(typeof(ActChangeSynchronizer), nameof(ActChangeSynchronizer.OnPlayerReady))]
+internal static class IntegratedStrategyFinaleActChangeGuardPatch
+{
+	private static readonly AccessTools.FieldRef<ActChangeSynchronizer, int> LastTransitioningActIndexRef =
+		AccessTools.FieldRefAccess<ActChangeSynchronizer, int>("_lastTransitioningActIndex");
+
+	[HarmonyPriority(Priority.First)]
+	private static void Prefix(ActChangeSynchronizer __instance)
+	{
+		if (IntegratedStrategyTreeHoleController.ShouldAllowRepeatedActTransition())
+		{
+			ResetTransitionMemory(__instance);
+		}
+	}
+
+	internal static void ResetTransitionMemory(ActChangeSynchronizer synchronizer)
+	{
+		LastTransitioningActIndexRef(synchronizer) = -1;
 	}
 }
 

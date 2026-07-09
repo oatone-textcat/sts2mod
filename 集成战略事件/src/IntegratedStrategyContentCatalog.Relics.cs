@@ -20,6 +20,7 @@ internal static partial class IntegratedStrategyContentCatalog
 		typeof(ProphetHornRelic),
 		typeof(PetalRelic),
 		typeof(AnasaKarmaRelic),
+		typeof(TatteredDollRelic),
 		typeof(BishopResearchRelic),
 		typeof(DeepBlueMemoryRelic),
 		typeof(DeterminationRelic),

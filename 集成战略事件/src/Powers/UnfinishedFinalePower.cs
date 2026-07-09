@@ -1,4 +1,5 @@
-using BaseLib.Abstracts;
+using STS2RitsuLib.Scaffolding.Content;
+using STS2RitsuLib.Scaffolding.Content.Patches;
 using IntegratedStrategyEvents.Encounters;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
@@ -8,8 +9,10 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace IntegratedStrategyEvents.Powers;
 
-public sealed class UnfinishedFinalePower : PowerModel, ICustomPower
+public sealed class UnfinishedFinalePower : PowerModel, IModPowerAssetOverrides
 {
+	public PowerAssetProfile AssetProfile => PowerAssetProfile.Empty;
+
 	private const string CustomPowerIconPath = "res://IntegratedStrategyEvents/images/powers/unfinished_finale.png";
 
 	private bool _isReviving;
@@ -18,7 +21,7 @@ public sealed class UnfinishedFinalePower : PowerModel, ICustomPower
 
 	public override PowerStackType StackType => PowerStackType.Single;
 
-	public string? CustomPackedIconPath => CustomPowerIconPath;
+	public string? CustomIconPath => CustomPowerIconPath;
 
 	public string? CustomBigIconPath => CustomPowerIconPath;
 

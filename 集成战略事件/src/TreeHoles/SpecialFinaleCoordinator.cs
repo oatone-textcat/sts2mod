@@ -256,6 +256,11 @@ internal static class SpecialFinaleCoordinator
 			return null;
 		}
 
+		if (HasTatteredDoll(state))
+		{
+			return SpecialFinaleKind.DesireHall;
+		}
+
 		if (HasAnasaKarma(state))
 		{
 			return SpecialFinaleKind.CarefreeVihara;
@@ -336,6 +341,12 @@ internal static class SpecialFinaleCoordinator
 	{
 		return state.Players.Any(static player =>
 			player.Relics.Any(static relic => !relic.IsMelted && relic is TimeAndLightRelic));
+	}
+
+	private static bool HasTatteredDoll(RunState state)
+	{
+		return state.Players.Any(static player =>
+			player.Relics.Any(static relic => !relic.IsMelted && relic is TatteredDollRelic));
 	}
 
 	private static bool HasAnasaKarma(RunState state)
@@ -580,48 +591,91 @@ internal static class SpecialFinaleCoordinator
 			IsExpectedFinaleEncounter(combatRoom.Encounter, finaleKind);
 	}
 
+	// 每种终局一行：BOSS 遭遇类型、遭遇实例、终局图工厂、阶段标签、幕名。
+	// 新增终局 = 在这里加一行（外加 SpecialFinaleKind 枚举值与入口逻辑），
+	// 不再需要同步维护多个平行 switch。
+	private sealed record FinaleProfile(
+		Type BossEncounterType,
+		Func<EncounterModel> GetBossEncounter,
+		Func<RunState, ActMap> CreateMap,
+		string StageLabel,
+		string ActName);
+
+	private static readonly IReadOnlyDictionary<SpecialFinaleKind, FinaleProfile> FinaleProfiles =
+		new Dictionary<SpecialFinaleKind, FinaleProfile>
+		{
+			[SpecialFinaleKind.EndlessFinale] = new(
+				typeof(FurnaceFinaleAmiyaEncounter),
+				static () => ModelDb.Encounter<FurnaceFinaleAmiyaEncounter>(),
+				static _ => new IntegratedStrategyEndlessFinaleActMap(),
+				TreeHoleConstants.EndlessFinaleStageLabel,
+				TreeHoleConstants.EndlessFinaleActName),
+			[SpecialFinaleKind.EternalDust] = new(
+				typeof(CalendarKingsPincerBossEncounter),
+				static () => ModelDb.Encounter<CalendarKingsPincerBossEncounter>(),
+				static _ => new IntegratedStrategyEternalDustFinaleActMap(),
+				TreeHoleConstants.EternalDustFinaleStageLabel,
+				TreeHoleConstants.EternalDustFinaleActName),
+			[SpecialFinaleKind.RadiantApex] = new(
+				typeof(BozhokastiSaintguardGunnerBossEncounter),
+				static () => ModelDb.Encounter<BozhokastiSaintguardGunnerBossEncounter>(),
+				CreateRadiantApexFinaleMap,
+				TreeHoleConstants.RadiantApexFinaleStageLabel,
+				TreeHoleConstants.RadiantApexFinaleActName),
+			[SpecialFinaleKind.CarefreeVihara] = new(
+				typeof(KuilongMahasattvaAvatarBossEncounter),
+				static () => ModelDb.Encounter<KuilongMahasattvaAvatarBossEncounter>(),
+				CreateCarefreeViharaFinaleMap,
+				TreeHoleConstants.CarefreeViharaFinaleStageLabel,
+				TreeHoleConstants.CarefreeViharaFinaleActName),
+			[SpecialFinaleKind.AbyssalJungle] = new(
+				typeof(IzumikEcologicalFountainBossEncounter),
+				static () => ModelDb.Encounter<IzumikEcologicalFountainBossEncounter>(),
+				static _ => new IntegratedStrategyAbyssalJungleFinaleActMap(),
+				TreeHoleConstants.AbyssalJungleFinaleStageLabel,
+				TreeHoleConstants.AbyssalJungleFinaleActName),
+			[SpecialFinaleKind.AbyssalJungleIsharmla] = new(
+				typeof(IsharmlaCorruptedHeartBossEncounter),
+				static () => ModelDb.Encounter<IsharmlaCorruptedHeartBossEncounter>(),
+				static _ => new IntegratedStrategyAbyssalJungleFinaleActMap(),
+				TreeHoleConstants.AbyssalJungleFinaleStageLabel,
+				TreeHoleConstants.AbyssalJungleFinaleActName),
+			[SpecialFinaleKind.ProphetHornFragment] = new(
+				typeof(FrostNovaWinterScarBossEncounter),
+				static () => ModelDb.Encounter<FrostNovaWinterScarBossEncounter>(),
+				static _ => new IntegratedStrategyProphetHornFragmentActMap(),
+				TreeHoleConstants.StrangeFragmentStageLabel,
+				TreeHoleConstants.StrangeFragmentActName),
+			[SpecialFinaleKind.DesireHall] = new(
+				typeof(SorrowfulLockBossEncounter),
+				static () => ModelDb.Encounter<SorrowfulLockBossEncounter>(),
+				CreateDesireHallFinaleMap,
+				TreeHoleConstants.DesireHallFinaleStageLabel,
+				TreeHoleConstants.DesireHallFinaleActName)
+		};
+
+	private static FinaleProfile GetFinaleProfile(SpecialFinaleKind finaleKind)
+	{
+		return FinaleProfiles.TryGetValue(finaleKind, out FinaleProfile? profile)
+			? profile
+			: throw new ArgumentOutOfRangeException(nameof(finaleKind), finaleKind, null);
+	}
+
 	private static bool IsExpectedFinaleEncounter(EncounterModel encounter, SpecialFinaleKind finaleKind)
 	{
-		return finaleKind switch
+		if (!FinaleProfiles.TryGetValue(finaleKind, out FinaleProfile? profile))
 		{
-			SpecialFinaleKind.EndlessFinale =>
-				encounter is FurnaceFinaleAmiyaEncounter ||
-				encounter.CanonicalInstance is FurnaceFinaleAmiyaEncounter,
-			SpecialFinaleKind.EternalDust =>
-				encounter is CalendarKingsPincerBossEncounter ||
-				encounter.CanonicalInstance is CalendarKingsPincerBossEncounter,
-			SpecialFinaleKind.RadiantApex =>
-				encounter is BozhokastiSaintguardGunnerBossEncounter ||
-				encounter.CanonicalInstance is BozhokastiSaintguardGunnerBossEncounter,
-			SpecialFinaleKind.CarefreeVihara =>
-				encounter is KuilongMahasattvaAvatarBossEncounter ||
-				encounter.CanonicalInstance is KuilongMahasattvaAvatarBossEncounter,
-			SpecialFinaleKind.AbyssalJungle =>
-				encounter is IzumikEcologicalFountainBossEncounter ||
-				encounter.CanonicalInstance is IzumikEcologicalFountainBossEncounter,
-			SpecialFinaleKind.AbyssalJungleIsharmla =>
-				encounter is IsharmlaCorruptedHeartBossEncounter ||
-				encounter.CanonicalInstance is IsharmlaCorruptedHeartBossEncounter,
-			SpecialFinaleKind.ProphetHornFragment =>
-				encounter is FrostNovaWinterScarBossEncounter ||
-				encounter.CanonicalInstance is FrostNovaWinterScarBossEncounter,
-			_ => false
-		};
+			return false;
+		}
+
+		Type bossType = profile.BossEncounterType;
+		return bossType.IsInstanceOfType(encounter) ||
+			(encounter.CanonicalInstance is { } canonical && bossType.IsInstanceOfType(canonical));
 	}
 
 	private static ActMap CreateFinaleMap(SpecialFinaleKind finaleKind, RunState state)
 	{
-		return finaleKind switch
-		{
-			SpecialFinaleKind.EndlessFinale => new IntegratedStrategyEndlessFinaleActMap(),
-			SpecialFinaleKind.EternalDust => new IntegratedStrategyEternalDustFinaleActMap(),
-			SpecialFinaleKind.RadiantApex => CreateRadiantApexFinaleMap(state),
-			SpecialFinaleKind.CarefreeVihara => CreateCarefreeViharaFinaleMap(state),
-			SpecialFinaleKind.AbyssalJungle => new IntegratedStrategyAbyssalJungleFinaleActMap(),
-			SpecialFinaleKind.AbyssalJungleIsharmla => new IntegratedStrategyAbyssalJungleFinaleActMap(),
-			SpecialFinaleKind.ProphetHornFragment => new IntegratedStrategyProphetHornFragmentActMap(),
-			_ => throw new ArgumentOutOfRangeException(nameof(finaleKind), finaleKind, null)
-		};
+		return GetFinaleProfile(finaleKind).CreateMap(state);
 	}
 
 	private static IntegratedStrategyRadiantApexFinaleActMap CreateRadiantApexFinaleMap(RunState state)
@@ -633,6 +687,17 @@ internal static class SpecialFinaleCoordinator
 			$"{ModInfo.LogPrefix} Radiant Apex combat nodes generated as " +
 			$"{firstCombatPointType} and {secondCombatPointType}.");
 		return new IntegratedStrategyRadiantApexFinaleActMap(firstCombatPointType, secondCombatPointType);
+	}
+
+	private static IntegratedStrategyDesireHallFinaleActMap CreateDesireHallFinaleMap(RunState state)
+	{
+		Rng rng = new(TreeHoleSeedFactory.CreateRadiantApexCombatNodeSeed(state), "integrated_strategy_desire_hall_combat_nodes");
+		MapPointType firstCombatPointType = RollRadiantApexCombatPointType(rng);
+		MapPointType secondCombatPointType = RollRadiantApexCombatPointType(rng);
+		Log.Info(
+			$"{ModInfo.LogPrefix} Desire Hall combat nodes generated as " +
+			$"{firstCombatPointType} and {secondCombatPointType}.");
+		return new IntegratedStrategyDesireHallFinaleActMap(firstCombatPointType, secondCombatPointType);
 	}
 
 	private static IntegratedStrategyCarefreeViharaFinaleActMap CreateCarefreeViharaFinaleMap(RunState state)
@@ -653,47 +718,25 @@ internal static class SpecialFinaleCoordinator
 
 	private static string GetFinaleStageLabel(SpecialFinaleKind finaleKind)
 	{
-		return finaleKind switch
-		{
-			SpecialFinaleKind.EndlessFinale => TreeHoleConstants.EndlessFinaleStageLabel,
-			SpecialFinaleKind.EternalDust => TreeHoleConstants.EternalDustFinaleStageLabel,
-			SpecialFinaleKind.RadiantApex => TreeHoleConstants.RadiantApexFinaleStageLabel,
-			SpecialFinaleKind.CarefreeVihara => TreeHoleConstants.CarefreeViharaFinaleStageLabel,
-			SpecialFinaleKind.AbyssalJungle => TreeHoleConstants.AbyssalJungleFinaleStageLabel,
-			SpecialFinaleKind.AbyssalJungleIsharmla => TreeHoleConstants.AbyssalJungleFinaleStageLabel,
-			SpecialFinaleKind.ProphetHornFragment => TreeHoleConstants.StrangeFragmentStageLabel,
-			_ => throw new ArgumentOutOfRangeException(nameof(finaleKind), finaleKind, null)
-		};
+		return GetFinaleProfile(finaleKind).StageLabel;
 	}
 
 	private static string GetFinaleActName(SpecialFinaleKind finaleKind)
 	{
-		return finaleKind switch
-		{
-			SpecialFinaleKind.EndlessFinale => TreeHoleConstants.EndlessFinaleActName,
-			SpecialFinaleKind.EternalDust => TreeHoleConstants.EternalDustFinaleActName,
-			SpecialFinaleKind.RadiantApex => TreeHoleConstants.RadiantApexFinaleActName,
-			SpecialFinaleKind.CarefreeVihara => TreeHoleConstants.CarefreeViharaFinaleActName,
-			SpecialFinaleKind.AbyssalJungle => TreeHoleConstants.AbyssalJungleFinaleActName,
-			SpecialFinaleKind.AbyssalJungleIsharmla => TreeHoleConstants.AbyssalJungleFinaleActName,
-			SpecialFinaleKind.ProphetHornFragment => TreeHoleConstants.StrangeFragmentActName,
-			_ => throw new ArgumentOutOfRangeException(nameof(finaleKind), finaleKind, null)
-		};
+		return GetFinaleProfile(finaleKind).ActName;
 	}
 
 	private static EncounterModel GetFinaleBossEncounter(SpecialFinaleKind finaleKind)
 	{
-		return finaleKind switch
-		{
-			SpecialFinaleKind.EndlessFinale => ModelDb.Encounter<FurnaceFinaleAmiyaEncounter>(),
-			SpecialFinaleKind.EternalDust => ModelDb.Encounter<CalendarKingsPincerBossEncounter>(),
-			SpecialFinaleKind.RadiantApex => ModelDb.Encounter<BozhokastiSaintguardGunnerBossEncounter>(),
-			SpecialFinaleKind.CarefreeVihara => ModelDb.Encounter<KuilongMahasattvaAvatarBossEncounter>(),
-			SpecialFinaleKind.AbyssalJungle => ModelDb.Encounter<IzumikEcologicalFountainBossEncounter>(),
-			SpecialFinaleKind.AbyssalJungleIsharmla => ModelDb.Encounter<IsharmlaCorruptedHeartBossEncounter>(),
-			SpecialFinaleKind.ProphetHornFragment => ModelDb.Encounter<FrostNovaWinterScarBossEncounter>(),
-			_ => throw new ArgumentOutOfRangeException(nameof(finaleKind), finaleKind, null)
-		};
+		return GetFinaleProfile(finaleKind).GetBossEncounter();
+	}
+
+	public static bool ShouldAllowRepeatedActTransition()
+	{
+		RunState? state = RunManager.Instance.DebugOnlyGetState();
+		return state != null &&
+			(TreeHoleSessionManager.TryGetFinaleSession(state, out _) ||
+			 TreeHoleSessionManager.HasPendingArchitectCompletion(state));
 	}
 
 	private static bool ShouldCompleteArchitectAfterEndlessFinale(RunState state)

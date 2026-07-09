@@ -16,5 +16,7 @@ internal static class TreeHoleConstants
 	public const string CarefreeViharaFinaleStageLabel = "阶段ξ ";
 	public const string AbyssalJungleFinaleActName = "幽海丛林";
 	public const string AbyssalJungleFinaleStageLabel = "阶段Φ ";
+	public const string DesireHallFinaleActName = "渴欲大厅";
+	public const string DesireHallFinaleStageLabel = "阶段VI ";
 	public const string UnknownStageLabel = "阶段？";
 }

@@ -29,17 +29,17 @@ public sealed class IsharmlaCorruptedHeart : MonsterModel
 	public const string StruggleMoveId = "STRUGGLE_MOVE";
 	public const string RoarMoveId = "ROAR_MOVE";
 
-	private const int PhaseOneHp = 200;
-	private const int PhaseTwoHp = 500;
+	private const int PhaseOneHp = 300;
+	private const int PhaseTwoHp = 700;
 	private const decimal LightlessPowerAmount = 1m;
 	private const decimal TideSurgeHeal = 30m;
 	private const decimal LamentStatLoss = 1m;
 	private const decimal TideEbbDisintegrationAmount = 6m;
-	private const int BiteDamage = 8;
+	private const int BiteDamage = 10;
 	private const int BiteHits = 3;
-	private const int StruggleDamage = 30;
-	private const decimal RoarBlock = 20m;
-	private const decimal RoarRitual = 1m;
+	private const int StruggleDamage = 40;
+	private const decimal RoarBlock = 30m;
+	private const decimal RoarRitual = 2m;
 
 	private const float LightlessDelay = 0.95f;
 	private const float PhaseOneDebuffDelay = 0.75f;

@@ -8,11 +8,9 @@ MANIFEST_SRC="$ROOT/assets/$FILE_STEM.json"
 GAME_APP="${STS2_GAME_APP:-/Users/iniad/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app}"
 GAME_BIN="$GAME_APP/Contents/MacOS/Slay the Spire 2"
 MOD_DIR="$GAME_APP/Contents/MacOS/mods/$FILE_STEM"
-BASELIB_SRC="$GAME_APP/Contents/MacOS/BaseLib"
-BASELIB_MOD_DIR="$GAME_APP/Contents/MacOS/mods/BaseLib"
-BASELIB_WORKSHOP_DIR="${BASELIB_WORKSHOP_DIR:-/Users/iniad/Library/Application Support/Steam/steamapps/workshop/content/2868840/3737335127/BaseLib}"
-BASELIB_RELEASE_ZIP="${BASELIB_RELEASE_ZIP:-/Users/iniad/Downloads/BaseLib.3.3.0.zip}"
-BASELIB_REQUIRED_VERSION="${BASELIB_REQUIRED_VERSION:-v3.3.0}"
+RITSULIB_MOD_DIR="$GAME_APP/Contents/MacOS/mods/STS2-RitsuLib"
+RITSULIB_WORKSHOP_DIR="${RITSULIB_WORKSHOP_DIR:-/Users/iniad/Library/Application Support/Steam/steamapps/workshop/content/2868840/3747602295}"
+RITSULIB_REQUIRED_VERSION="${RITSULIB_REQUIRED_VERSION:-0.4.53}"
 BUILD_OUT="$ROOT/src/bin/Release/net9.0"
 PROJECT_PATH="$ROOT/src/$FILE_STEM.csproj"
 IMPORT_PROJECT="$ROOT/.build/import_project"
@@ -44,69 +42,30 @@ clean_macos_metadata() {
   find "$target" -name "._*" -type f -delete
 }
 
-baselib_has_required_version() {
+ritsulib_has_required_version() {
   local manifest="$1"
   [[ -f "$manifest" ]] || return 1
-  grep -q "\"version\"[[:space:]]*:[[:space:]]*\"$BASELIB_REQUIRED_VERSION\"" "$manifest"
+  grep -q "\"version\"[[:space:]]*:[[:space:]]*\"$RITSULIB_REQUIRED_VERSION\"" "$manifest"
 }
 
 major_minor_version() {
   sed -E 's/^([0-9]+[.][0-9]+).*/\1/' <<< "$1"
 }
 
-install_baselib_from_dir() {
-  local source_dir="$1"
-
-  rm -rf "$BASELIB_MOD_DIR"
-  mkdir -p "$BASELIB_MOD_DIR"
-  cp "$source_dir"/BaseLib.json "$BASELIB_MOD_DIR/BaseLib.json"
-  cp "$source_dir"/BaseLib.pck "$BASELIB_MOD_DIR/BaseLib.pck"
-  cp "$source_dir"/BaseLib.dll "$BASELIB_MOD_DIR/BaseLib.dll"
-  clean_macos_metadata "$BASELIB_MOD_DIR"
-}
-
-ensure_baselib() {
-  if baselib_has_required_version "$BASELIB_MOD_DIR/BaseLib.json"; then
+ensure_ritsulib() {
+  if ritsulib_has_required_version "$RITSULIB_MOD_DIR/mod_manifest.json"; then
     return 0
   fi
 
-  if [[ -d "$BASELIB_SRC" ]] && baselib_has_required_version "$BASELIB_SRC/BaseLib.json"; then
-    install_baselib_from_dir "$BASELIB_SRC"
+  if [[ -d "$RITSULIB_WORKSHOP_DIR" ]] && ritsulib_has_required_version "$RITSULIB_WORKSHOP_DIR/mod_manifest.json"; then
+    rm -rf "$RITSULIB_MOD_DIR"
+    mkdir -p "$RITSULIB_MOD_DIR"
+    rsync -a "$RITSULIB_WORKSHOP_DIR/" "$RITSULIB_MOD_DIR/"
+    clean_macos_metadata "$RITSULIB_MOD_DIR"
     return 0
   fi
 
-  if [[ -d "$BASELIB_WORKSHOP_DIR" ]] && baselib_has_required_version "$BASELIB_WORKSHOP_DIR/BaseLib.json"; then
-    install_baselib_from_dir "$BASELIB_WORKSHOP_DIR"
-    return 0
-  fi
-
-  if [[ -f "$BASELIB_RELEASE_ZIP" ]]; then
-    local tmp_dir
-    tmp_dir="$(mktemp -d)"
-    unzip -q "$BASELIB_RELEASE_ZIP" -d "$tmp_dir"
-
-    local manifest_path
-    manifest_path="$(find "$tmp_dir" -type f -name BaseLib.json -print -quit)"
-    if [[ -z "$manifest_path" ]]; then
-      print -u2 "Could not locate BaseLib files in $BASELIB_RELEASE_ZIP."
-      rm -rf "$tmp_dir"
-      exit 1
-    fi
-
-    local source_dir
-    source_dir="$(dirname "$manifest_path")"
-    if ! baselib_has_required_version "$source_dir/BaseLib.json"; then
-      print -u2 "$BASELIB_RELEASE_ZIP is not BaseLib $BASELIB_REQUIRED_VERSION."
-      rm -rf "$tmp_dir"
-      exit 1
-    fi
-
-    install_baselib_from_dir "$source_dir"
-    rm -rf "$tmp_dir"
-    return 0
-  fi
-
-  print -u2 "BaseLib $BASELIB_REQUIRED_VERSION is required. Subscribe to Workshop item 3737335127, put BaseLib.${BASELIB_REQUIRED_VERSION#v}.zip at $BASELIB_RELEASE_ZIP, or set BASELIB_WORKSHOP_DIR/BASELIB_RELEASE_ZIP."
+  print -u2 "RitsuLib $RITSULIB_REQUIRED_VERSION is required. Subscribe to Workshop item 3747602295 or set RITSULIB_WORKSHOP_DIR."
   exit 1
 }
 
@@ -125,7 +84,7 @@ fi
 
 rm -rf "$ROOT/src/bin" "$ROOT/src/obj" "$ROOT/dist" "$ROOT/.build"
 
-ensure_baselib
+ensure_ritsulib
 
 DOTNET_ROOT="$DOTNET_ROOT" "$DOTNET_BIN" build "$PROJECT_PATH" -c Release
 
@@ -156,7 +115,7 @@ cp "$MANIFEST_SRC" "$ROOT/dist/$FILE_STEM.json"
 for dll in "$BUILD_OUT"/*.dll; do
   base_name="$(basename "$dll")"
   case "$base_name" in
-    sts2.dll|GodotSharp.dll|BaseLib.dll|0Harmony.dll)
+    sts2.dll|GodotSharp.dll|STS2-RitsuLib.dll|0Harmony.dll)
       continue
       ;;
   esac

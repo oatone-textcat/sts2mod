@@ -1,4 +1,5 @@
-using BaseLib.Abstracts;
+using STS2RitsuLib.Scaffolding.Content;
+using STS2RitsuLib.Scaffolding.Content.Patches;
 using IntegratedStrategyEvents.Encounters;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Powers;
@@ -8,15 +9,17 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace IntegratedStrategyEvents.Powers;
 
-public sealed class SnowMonsterPower : PowerModel, ICustomPower
+public sealed class SnowMonsterPower : PowerModel, IModPowerAssetOverrides
 {
+	public PowerAssetProfile AssetProfile => PowerAssetProfile.Empty;
+
 	private bool _isReviving;
 
 	public override PowerType Type => PowerType.Buff;
 
 	public override PowerStackType StackType => PowerStackType.Single;
 
-	public string? CustomPackedIconPath => ModelDb.Power<HailstormPower>().PackedIconPath;
+	public string? CustomIconPath => ModelDb.Power<HailstormPower>().PackedIconPath;
 
 	public string? CustomBigIconPath => ModelDb.Power<HailstormPower>().ResolvedBigIconPath;
 

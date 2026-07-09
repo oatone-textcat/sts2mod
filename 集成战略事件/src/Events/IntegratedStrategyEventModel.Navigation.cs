@@ -1,4 +1,4 @@
-using BaseLib.Abstracts;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Rewards;
@@ -14,7 +14,8 @@ public abstract partial class IntegratedStrategyEventModel
 
 	protected EventOption LockedChoice(string optionKey, string pageKey = InitialPage)
 	{
-		return LockedOption(optionKey, pageKey);
+		// 等价于 BaseLib CustomEventModel.LockedOption：onChosen 为 null 即锁定选项。
+		return new EventOption(this, null, $"{Id.Entry}.pages.{pageKey}.options.{optionKey}");
 	}
 
 	protected EventOption GoldChoice(
@@ -59,7 +60,7 @@ public abstract partial class IntegratedStrategyEventModel
 	}
 
 	protected EventOption FightChoice<TEncounter>(string pageKey)
-		where TEncounter : CustomEncounterModel
+		where TEncounter : EncounterModel
 	{
 		return FightChoice(EnterEventCombat<TEncounter>, pageKey);
 	}
@@ -70,19 +71,19 @@ public abstract partial class IntegratedStrategyEventModel
 	}
 
 	protected void ShowFightPage<TEncounter>(string pageKey)
-		where TEncounter : CustomEncounterModel
+		where TEncounter : EncounterModel
 	{
 		ShowFightPage(pageKey, EnterEventCombat<TEncounter>);
 	}
 
 	protected Task EnterEventCombat<TEncounter>()
-		where TEncounter : CustomEncounterModel
+		where TEncounter : EncounterModel
 	{
 		return EnterEventCombat<TEncounter>(Array.Empty<Reward>());
 	}
 
 	protected Task EnterEventCombat<TEncounter>(IReadOnlyList<Reward> rewards)
-		where TEncounter : CustomEncounterModel
+		where TEncounter : EncounterModel
 	{
 		EnterCombatWithoutExitingEvent<TEncounter>(
 			rewards,

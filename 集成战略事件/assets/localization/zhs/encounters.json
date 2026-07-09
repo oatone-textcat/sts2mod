@@ -103,5 +103,17 @@
   "FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.title": "霜星，“冬痕”测试",
   "FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.loss": "寒潮覆过雪原，战场归于静默。",
   "INTEGRATEDSTRATEGYEVENTS-FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.title": "霜星，“冬痕”测试",
-  "INTEGRATEDSTRATEGYEVENTS-FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.loss": "寒潮覆过雪原，战场归于静默。"
+  "INTEGRATEDSTRATEGYEVENTS-FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.loss": "寒潮覆过雪原，战场归于静默。",
+  "sorrowfulLockTestEncounter.title": "伤心的大锁",
+  "SORROWFUL_LOCK_TEST_ENCOUNTER.title": "伤心的大锁",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_TEST_ENCOUNTER.title": "伤心的大锁",
+  "sorrowfulLockTestEncounter.loss": "{character}倒在了[gold]{encounter}[/gold]之中。",
+  "SORROWFUL_LOCK_TEST_ENCOUNTER.loss": "{character}倒在了[gold]{encounter}[/gold]之中。",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_TEST_ENCOUNTER.loss": "{character}倒在了[gold]{encounter}[/gold]之中。",
+  "sorrowfulLockBossEncounter.title": "伤心的大锁",
+  "SORROWFUL_LOCK_BOSS_ENCOUNTER.title": "伤心的大锁",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_BOSS_ENCOUNTER.title": "伤心的大锁",
+  "sorrowfulLockBossEncounter.loss": "{character}倒在了[gold]{encounter}[/gold]之中。",
+  "SORROWFUL_LOCK_BOSS_ENCOUNTER.loss": "{character}倒在了[gold]{encounter}[/gold]之中。",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_BOSS_ENCOUNTER.loss": "{character}倒在了[gold]{encounter}[/gold]之中。"
 }

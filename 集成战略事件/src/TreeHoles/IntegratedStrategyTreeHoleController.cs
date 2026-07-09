@@ -35,6 +35,18 @@ internal static class IntegratedStrategyTreeHoleController
 		return TreeHoleSessionManager.IsActiveCurrentRun();
 	}
 
+	/// <summary>
+	/// 该地图是否属于模组自建的临时层（树洞 / 终局 / 断章），或当前跑局正处于临时层。
+	/// 类型层面看 <see cref="IIntegratedStrategyTemporaryActMap"/> 标记，
+	/// 存档往返后类型信息丢失（SavedActMap）则退回会话拓扑判定。
+	/// </summary>
+	public static bool IsTemporaryMap(IRunState? runState, ActMap map)
+	{
+		return IsActive(runState) ||
+			map is IIntegratedStrategyTemporaryActMap ||
+			TreeHoleSessionManager.IsCurrentAnyTemporaryMap(map);
+	}
+
 	public static bool TryRestoreCompletedCurrentRun()
 	{
 		return TreeHoleSessionManager.TryRestoreCompletedCurrentRun();
@@ -48,6 +60,11 @@ internal static class IntegratedStrategyTreeHoleController
 	public static void MarkTerminalRewardsProceededCurrentRun()
 	{
 		TreeHoleSessionManager.MarkTerminalRewardsProceededCurrentRun();
+	}
+
+	public static void HandleTerminalTreasureRoomProceed()
+	{
+		TreeHoleSessionManager.HandleTerminalTreasureRoomProceed();
 	}
 
 	public static bool TryGetCurrentDestination(out string actName)
@@ -98,6 +115,11 @@ internal static class IntegratedStrategyTreeHoleController
 	public static bool IsCurrentCarefreeViharaFinaleMap(ActMap map)
 	{
 		return TreeHoleSessionManager.IsCurrentCarefreeViharaFinaleMap(map);
+	}
+
+	public static bool IsCurrentDesireHallFinaleMap(ActMap map)
+	{
+		return TreeHoleSessionManager.IsCurrentDesireHallFinaleMap(map);
 	}
 
 	public static bool IsCurrentAbyssalJungleFinaleMap(ActMap map)
@@ -168,6 +190,13 @@ internal static class IntegratedStrategyTreeHoleController
 	public static bool HandleEnterNextAct(RunManager runManager, ref Task result)
 	{
 		return SpecialFinaleCoordinator.HandleEnterNextAct(runManager, ref result);
+	}
+
+	// 终局插层期间（或建筑师交接待办时）允许从同一幕序号再次转换，
+	// 供 0.108 新增的 ActChangeSynchronizer 重复转换守卫放行。
+	public static bool ShouldAllowRepeatedActTransition()
+	{
+		return SpecialFinaleCoordinator.ShouldAllowRepeatedActTransition();
 	}
 
 	public static void SuppressArchitectActChangeOptions(EventModel eventModel)

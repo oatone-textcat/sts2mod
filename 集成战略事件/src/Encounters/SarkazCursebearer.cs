@@ -20,7 +20,7 @@ public sealed class SarkazCursebearer : MonsterModel
 	public const string AttackMoveId = "ATTACK_MOVE";
 
 	private const int InitialHp = 68;
-	private const int AttackDamage = 6;
+	private const int AttackDamage = 8;
 	private const int AttackHits = 3;
 	private const float WakeDelay = 0.95f;
 	private const float AttackFirstHitDelay = 0.9f;

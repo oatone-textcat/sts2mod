@@ -8,6 +8,7 @@ namespace IntegratedStrategyEvents.ConsoleCommands;
 
 public sealed class IntegratedStrategyTreeHoleConsoleCmd : AbstractConsoleCmd
 {
+	private const string DebugTreeHoleDestinationRngName = "integrated_strategy_debug_tree_hole_destination";
 	private const string RandomArgument = "random";
 	private const string DeepArgument = "deep";
 	private const string CradleArgument = "cradle";
@@ -86,11 +87,11 @@ public sealed class IntegratedStrategyTreeHoleConsoleCmd : AbstractConsoleCmd
 			RunState state = (RunState)issuingPlayer.RunState;
 			uint seed = IntegratedStrategyStableRng.CreateSeed(
 				state.Rng.Seed,
-				"integrated_strategy_debug_tree_hole_destination",
+				DebugTreeHoleDestinationRngName,
 				unchecked((uint)state.CurrentActIndex),
 				unchecked((uint)state.ActFloor),
 				IntegratedStrategyStableRng.HashCoord(state.CurrentMapCoord));
-			MegaCrit.Sts2.Core.Random.Rng rng = new(seed, "integrated_strategy_debug_tree_hole_destination");
+			MegaCrit.Sts2.Core.Random.Rng rng = new(seed, DebugTreeHoleDestinationRngName);
 			destination = RandomDestinations[rng.NextInt(RandomDestinations.Length)];
 			error = string.Empty;
 			return true;

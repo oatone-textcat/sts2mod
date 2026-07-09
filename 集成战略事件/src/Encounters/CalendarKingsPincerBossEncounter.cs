@@ -6,12 +6,14 @@ namespace IntegratedStrategyEvents.Encounters;
 public sealed class CalendarKingsPincerBossEncounter :
 	IntegratedStrategyTwoSidedBossEncounter<LugalszargusCalendarKing>
 {
-	public override string BossNodePath => CalendarKingsPincerEncounter.BossNodePathBase;
+	public const string BossNodePathBase = $"res://{ModInfo.ModId}/images/map/two_rivals_boss_icon";
+
+	public override string BossNodePath => BossNodePathBase;
 
 	public override IEnumerable<string> ExtraAssetPaths =>
 	[
-		CalendarKingsPincerEncounter.BossNodePathBase + ".png",
-		CalendarKingsPincerEncounter.BossNodePathBase + "_outline.png"
+		BossNodePathBase + ".png",
+		BossNodePathBase + "_outline.png"
 	];
 
 	public override IEnumerable<MonsterModel> AllPossibleMonsters =>

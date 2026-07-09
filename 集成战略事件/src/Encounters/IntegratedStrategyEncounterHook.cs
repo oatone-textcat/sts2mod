@@ -1,9 +1,9 @@
-using BaseLib.Abstracts;
 using MegaCrit.Sts2.Core.Combat;
+using STS2RitsuLib.Models;
 
 namespace IntegratedStrategyEvents.Encounters;
 
-public abstract class IntegratedStrategyEncounterHook<TEncounter> : CustomSingletonModel
+public abstract class IntegratedStrategyEncounterHook<TEncounter> : HookedSingletonModel
 	where TEncounter : class
 {
 	protected IntegratedStrategyEncounterHook()

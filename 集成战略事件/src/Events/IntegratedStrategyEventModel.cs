@@ -1,12 +1,12 @@
-using BaseLib.Abstracts;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Runs;
+using STS2RitsuLib.Scaffolding.Content;
 
 namespace IntegratedStrategyEvents.Events;
 
-public abstract partial class IntegratedStrategyEventModel : CustomEventModel
+public abstract partial class IntegratedStrategyEventModel : ModEventTemplate
 {
 	protected const string InitialPage = "INITIAL";
 
@@ -18,11 +18,6 @@ public abstract partial class IntegratedStrategyEventModel : CustomEventModel
 		Definition.Layout ?? IntegratedStrategyEventLayoutProfile.Standard;
 
 	public bool AlignHoverTipsRight => Definition.AlignHoverTipsRight;
-
-	public override List<(string, string)>? Localization =>
-		IntegratedStrategyRichText.ApplyFontSizes(Definition.CreateLocalization());
-
-	public override ActModel[] Acts => IntegratedStrategyEventSpawnRules.GetActs(GetType());
 
 	public override bool IsShared => false;
 

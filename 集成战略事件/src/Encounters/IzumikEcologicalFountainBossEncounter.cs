@@ -19,7 +19,7 @@ public sealed class IzumikEcologicalFountainBossEncounter : IntegratedStrategyBo
 	[
 		BossNodePathBase + ".png",
 		BossNodePathBase + "_outline.png",
-		IzumikEcologicalFountainMusicController.TrackPath
+		IntegratedStrategyBossMusic.IzumikTrackPath
 	];
 
 	public override IEnumerable<MonsterModel> AllPossibleMonsters =>
@@ -35,6 +35,8 @@ public sealed class IzumikEcologicalFountainBossEncounter : IntegratedStrategyBo
 		IzumikEcologicalFountain.SummonRightSlot,
 		IzumikEcologicalFountain.BossSlot
 	];
+
+	protected override bool HasProgrammaticBackground => true;
 
 	public override BackgroundAssets? CustomEncounterBackground(ActModel parentAct, Rng rng)
 	{

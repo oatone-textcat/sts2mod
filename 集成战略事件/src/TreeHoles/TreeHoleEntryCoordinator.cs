@@ -81,7 +81,7 @@ internal static class TreeHoleEntryCoordinator
 			await TreeHoleRunAccessor.ExitCurrentRooms(runManager);
 			TreeHoleRunAccessor.ClearScreens(runManager);
 			uint treeHoleMapSeed = TreeHoleSeedFactory.CreateTreeHoleMapSeed(state, destinationActName, stageLabel);
-			Rng treeHoleRng = new(treeHoleMapSeed, "integrated_strategy_tree_hole_map");
+			Rng treeHoleRng = new(treeHoleMapSeed, TreeHoleSeedFactory.TreeHoleMapRngName);
 			IntegratedStrategyTreeHoleActMap treeHoleMap = IntegratedStrategyTreeHoleActMap.Create(treeHoleRng);
 			TreeHoleSession session = new(
 				state.Map,

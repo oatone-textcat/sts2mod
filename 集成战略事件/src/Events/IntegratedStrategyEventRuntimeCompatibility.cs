@@ -1,5 +1,6 @@
 using Godot;
 using HarmonyLib;
+using IntegratedStrategyEvents.Compatibility;
 using System.Reflection;
 using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Events;
@@ -14,47 +15,17 @@ namespace IntegratedStrategyEvents.Events;
 
 internal static class IntegratedStrategyEventRuntimeCompatibility
 {
-	private static bool localeChangeSubscribed;
+	private static readonly IntegratedStrategyLocMerge LocMerge =
+		new("events", "event", BuildEventLocalization);
 
 	public static void Install()
 	{
-		TrySubscribeToLocaleChanges();
-		MergeCurrentEventLocalization();
-	}
-
-	private static void TrySubscribeToLocaleChanges()
-	{
-		if (localeChangeSubscribed || LocManager.Instance == null)
-		{
-			return;
-		}
-		LocManager.Instance.SubscribeToLocaleChange(MergeCurrentEventLocalization);
-		localeChangeSubscribed = true;
+		LocMerge.Install();
 	}
 
 	internal static void MergeCurrentEventLocalization()
 	{
-		if (LocManager.Instance == null)
-		{
-			return;
-		}
-		TrySubscribeToLocaleChanges();
-
-		try
-		{
-			Dictionary<string, string> entries = BuildEventLocalization();
-			if (entries.Count == 0)
-			{
-				return;
-			}
-
-			LocManager.Instance.GetTable("events").MergeWith(entries);
-			Log.Info($"{ModInfo.LogPrefix} Merged {entries.Count} event localization entries for {LocManager.Instance.Language}.");
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"{ModInfo.LogPrefix} Failed to merge event localization compatibility entries: {ex}");
-		}
+		LocMerge.Merge();
 	}
 
 	private static Dictionary<string, string> BuildEventLocalization()
@@ -70,7 +41,9 @@ internal static class IntegratedStrategyEventRuntimeCompatibility
 				continue;
 			}
 
-			string eventKey = StringHelper.Slugify(eventType.Name);
+			// 用 ModelDb 的真实 entry 作前缀：RitsuLib 注册的事件会拿到带 mod 前缀的固定 entry，
+			// 仅 Inject 的事件保持原版 slug，两种情况都与游戏查表用的 Id.Entry 一致。
+			string eventKey = ModelDb.GetEntry(eventType);
 			List<(string, string)>? localization = createLocalization.Invoke(null, null) as List<(string, string)>;
 			foreach ((string relativeKey, string value) in IntegratedStrategyRichText.ApplyFontSizes(localization) ?? [])
 			{

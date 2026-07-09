@@ -36,6 +36,8 @@ public sealed class IsharmlaCorruptedHeartBossEncounter : IntegratedStrategyBoss
 		IsharmlaCorruptedHeart.BossSlot
 	];
 
+	protected override bool HasProgrammaticBackground => true;
+
 	public override BackgroundAssets? CustomEncounterBackground(ActModel parentAct, Rng rng)
 	{
 		_ = parentAct;

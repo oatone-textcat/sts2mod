@@ -68,5 +68,17 @@
   "INTEGRATEDSTRATEGYEVENTS-NON_ATTACHMENT_POWER.title": "不着相",
   "nonAttachmentPower.description": "第三回合开始时，进入自在阶段。",
   "NON_ATTACHMENT_POWER.description": "第三回合开始时，进入自在阶段。",
-  "INTEGRATEDSTRATEGYEVENTS-NON_ATTACHMENT_POWER.description": "第三回合开始时，进入自在阶段。"
+  "INTEGRATEDSTRATEGYEVENTS-NON_ATTACHMENT_POWER.description": "第三回合开始时，进入自在阶段。",
+  "masterworkPower.title": "作品",
+  "MASTERWORK_POWER.title": "作品",
+  "INTEGRATEDSTRATEGYEVENTS-MASTERWORK_POWER.title": "作品",
+  "masterworkPower.smartDescription": "再受到[blue]{Amount}[/blue]次伤害后，获得[blue]5[/blue]点[gold]活力[/gold]与[blue]1[/blue]点临时[gold]荆棘[/gold]。",
+  "MASTERWORK_POWER.smartDescription": "再受到[blue]{Amount}[/blue]次伤害后，获得[blue]5[/blue]点[gold]活力[/gold]与[blue]1[/blue]点临时[gold]荆棘[/gold]。",
+  "INTEGRATEDSTRATEGYEVENTS-MASTERWORK_POWER.smartDescription": "再受到[blue]{Amount}[/blue]次伤害后，获得[blue]5[/blue]点[gold]活力[/gold]与[blue]1[/blue]点临时[gold]荆棘[/gold]。",
+  "sorrowfulLockTemporaryThornsPower.title": "临时荆棘",
+  "SORROWFUL_LOCK_TEMPORARY_THORNS_POWER.title": "临时荆棘",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_TEMPORARY_THORNS_POWER.title": "临时荆棘",
+  "sorrowfulLockTemporaryThornsPower.smartDescription": "自身回合结束时，失去[blue]{Amount}[/blue]点[gold]荆棘[/gold]。",
+  "SORROWFUL_LOCK_TEMPORARY_THORNS_POWER.smartDescription": "自身回合结束时，失去[blue]{Amount}[/blue]点[gold]荆棘[/gold]。",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_TEMPORARY_THORNS_POWER.smartDescription": "自身回合结束时，失去[blue]{Amount}[/blue]点[gold]荆棘[/gold]。"
 }

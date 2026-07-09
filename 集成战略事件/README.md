@@ -1,6 +1,6 @@
 # 集成战略事件
 
-BaseLib event-content mod for adding Slay the Spire 2 events inspired by Arknights Integrated Strategies.
+RitsuLib-based event-content mod for adding Slay the Spire 2 events inspired by Arknights Integrated Strategies. (前置依赖: STS2-RitsuLib, Workshop 3747602295)
 
 ## Structure
 

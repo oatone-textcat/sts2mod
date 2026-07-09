@@ -8,18 +8,7 @@ public sealed class FrostNovaWinterScarBossEncounterHook :
 	protected override Task BeforeIntegratedStrategyCombatStart(CombatState combatState)
 	{
 		_ = combatState;
-		FrostNovaWinterScarMusicController.Play();
-		return Task.CompletedTask;
-	}
-}
-
-public sealed class FrostNovaWinterScarTestEncounterHook :
-	IntegratedStrategyEncounterHook<FrostNovaWinterScarTestEncounter>
-{
-	protected override Task BeforeIntegratedStrategyCombatStart(CombatState combatState)
-	{
-		_ = combatState;
-		FrostNovaWinterScarMusicController.Play();
+		IntegratedStrategyBossMusic.FrostNova.Play();
 		return Task.CompletedTask;
 	}
 }

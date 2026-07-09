@@ -1,59 +1,26 @@
 using System.Text.Json;
 using Godot;
 using HarmonyLib;
+using IntegratedStrategyEvents.Compatibility;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
-using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 
 namespace IntegratedStrategyEvents.Encounters;
 
 internal static class IntegratedStrategyEncounterLocalization
 {
-	private const string LocTable = "encounters";
-	private static bool localeChangeSubscribed;
+	private static readonly IntegratedStrategyLocMerge LocMerge =
+		new("encounters", "encounter", BuildEncounterLocalization);
 
 	public static void Install()
 	{
-		TrySubscribeToLocaleChanges();
-		MergeCurrentEncounterLocalization();
-	}
-
-	private static void TrySubscribeToLocaleChanges()
-	{
-		if (localeChangeSubscribed || LocManager.Instance == null)
-		{
-			return;
-		}
-
-		LocManager.Instance.SubscribeToLocaleChange(MergeCurrentEncounterLocalization);
-		localeChangeSubscribed = true;
+		LocMerge.Install();
 	}
 
 	internal static void MergeCurrentEncounterLocalization()
 	{
-		if (LocManager.Instance == null)
-		{
-			return;
-		}
-
-		TrySubscribeToLocaleChanges();
-
-		try
-		{
-			Dictionary<string, string> entries = BuildEncounterLocalization();
-			if (entries.Count == 0)
-			{
-				return;
-			}
-
-			LocManager.Instance.GetTable(LocTable).MergeWith(entries);
-			Log.Info($"{ModInfo.LogPrefix} Merged {entries.Count} encounter localization entries for {LocManager.Instance.Language}.");
-		}
-		catch (Exception ex)
-		{
-			Log.Warn($"{ModInfo.LogPrefix} Failed to merge encounter localization compatibility entries: {ex}");
-		}
+		LocMerge.Merge();
 	}
 
 	private static Dictionary<string, string> BuildEncounterLocalization()

@@ -16,7 +16,7 @@ public sealed class BozhokastiSaintguardGunnerBossEncounter : IntegratedStrategy
 	[
 		BossNodePathBase + ".png",
 		BossNodePathBase + "_outline.png",
-		BozhokastiSaintguardGunnerMusicController.TrackPath
+		IntegratedStrategyBossMusic.BozhokastiTrackPath
 	];
 
 	public override IEnumerable<MonsterModel> AllPossibleMonsters =>

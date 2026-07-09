@@ -8,18 +8,7 @@ public sealed class IsharmlaCorruptedHeartBossEncounterHook :
 	protected override Task BeforeIntegratedStrategyCombatStart(CombatState combatState)
 	{
 		_ = combatState;
-		IsharmlaCorruptedHeartMusicController.Play();
-		return Task.CompletedTask;
-	}
-}
-
-public sealed class IsharmlaCorruptedHeartTestEncounterHook :
-	IntegratedStrategyEncounterHook<IsharmlaCorruptedHeartTestEncounter>
-{
-	protected override Task BeforeIntegratedStrategyCombatStart(CombatState combatState)
-	{
-		_ = combatState;
-		IsharmlaCorruptedHeartMusicController.Play();
+		IntegratedStrategyBossMusic.Isharmla.Play();
 		return Task.CompletedTask;
 	}
 }

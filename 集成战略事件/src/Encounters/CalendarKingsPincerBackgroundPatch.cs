@@ -29,9 +29,7 @@ internal static class CalendarKingsPincerCreateBackgroundPatch
 
 	internal static bool IsCalendarKingsPincerEncounter(EncounterModel encounter)
 	{
-		return encounter is CalendarKingsPincerEncounter ||
-			encounter.CanonicalInstance is CalendarKingsPincerEncounter ||
-			encounter is CalendarKingsPincerBossEncounter ||
+		return encounter is CalendarKingsPincerBossEncounter ||
 			encounter.CanonicalInstance is CalendarKingsPincerBossEncounter;
 	}
 }
@@ -55,7 +53,7 @@ internal static class CalendarKingsPincerGetAssetPathsPatch
 			new BackgroundAssets("the_insatiable_boss", backgroundRng).AssetPaths;
 		__result = __result
 			.Concat(backgroundAssetPaths)
-			.Append(CalendarKingsPincerMusicController.TrackPath)
+			.Append(IntegratedStrategyBossMusic.CalendarKingsTrackPath)
 			.Distinct()
 			.ToArray();
 	}

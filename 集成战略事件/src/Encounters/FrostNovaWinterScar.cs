@@ -30,7 +30,7 @@ public sealed class FrostNovaWinterScar : MonsterModel
 	public const string PhaseTwoIceRingMoveId = "PHASE_TWO_ICE_RING_MOVE";
 	public const string PhaseTwoFreezeMoveId = "PHASE_TWO_FREEZE_MOVE";
 
-	private const int InitialHp = 200;
+	private const int InitialHp = 240;
 	private const decimal ColdWaveSlow = 1m;
 	private const int PhaseOneIceSpikeDamage = 3;
 	private const int PhaseOneIceSpikeHits = 4;

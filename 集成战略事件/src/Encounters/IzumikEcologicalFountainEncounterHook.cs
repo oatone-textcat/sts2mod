@@ -8,18 +8,7 @@ public sealed class IzumikEcologicalFountainBossEncounterHook :
 	protected override Task BeforeIntegratedStrategyCombatStart(CombatState combatState)
 	{
 		_ = combatState;
-		IzumikEcologicalFountainMusicController.Play();
-		return Task.CompletedTask;
-	}
-}
-
-public sealed class IzumikEcologicalFountainTestEncounterHook :
-	IntegratedStrategyEncounterHook<IzumikEcologicalFountainTestEncounter>
-{
-	protected override Task BeforeIntegratedStrategyCombatStart(CombatState combatState)
-	{
-		_ = combatState;
-		IzumikEcologicalFountainMusicController.Play();
+		IntegratedStrategyBossMusic.Izumik.Play();
 		return Task.CompletedTask;
 	}
 }

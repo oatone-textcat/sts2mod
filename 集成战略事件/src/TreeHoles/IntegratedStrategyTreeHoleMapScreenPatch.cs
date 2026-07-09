@@ -4,6 +4,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
 
@@ -57,6 +58,14 @@ internal static class IntegratedStrategyTreeHoleMapScreenPatch
 
 		if (map is IntegratedStrategyCarefreeViharaFinaleActMap ||
 			IntegratedStrategyTreeHoleController.IsCurrentCarefreeViharaFinaleMap(map))
+		{
+			HideSpecialPoint(__instance, "_startingPointNode");
+			HideSpecialPaths(__instance, map.StartingMapPoint.coord);
+			return;
+		}
+
+		if (map is IntegratedStrategyDesireHallFinaleActMap ||
+			IntegratedStrategyTreeHoleController.IsCurrentDesireHallFinaleMap(map))
 		{
 			HideSpecialPoint(__instance, "_startingPointNode");
 			HideSpecialPaths(__instance, map.StartingMapPoint.coord);
@@ -216,6 +225,18 @@ internal static class IntegratedStrategyTreeHoleTerminalRewardsProceedPatch
 		// suppression，让后续 SetMap/Open/RecalculateTravelability 的重试可用。
 		IntegratedStrategyTreeHoleController.MarkTerminalRewardsProceededCurrentRun();
 		IntegratedStrategyTreeHoleController.TryRestoreCompletedCurrentRunAfterTerminalProceed();
+	}
+}
+
+// 宝箱房的"前进"按钮直接 NMapScreen.Open()，不走 ProceedFromTerminalRewardsScreen，
+// 上面的补丁对宝箱终点永远不触发（玩家反馈：终点为宝箱时无法离开树洞）。
+// 在按钮回调上补一个对称入口。
+[HarmonyPatch(typeof(NTreasureRoom), "OnProceedButtonReleased")]
+internal static class IntegratedStrategyTreeHoleTreasureProceedPatch
+{
+	private static void Postfix()
+	{
+		IntegratedStrategyTreeHoleController.HandleTerminalTreasureRoomProceed();
 	}
 }
 

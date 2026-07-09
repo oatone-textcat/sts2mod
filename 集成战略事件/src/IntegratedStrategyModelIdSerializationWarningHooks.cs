@@ -87,12 +87,12 @@ internal static class IntegratedStrategyModelIdSerializationWarningHooks
 			{
 				if (mod.state != ModLoadState.Loaded
 					|| !string.Equals(mod.manifest?.id, ModInfo.ModId, StringComparison.Ordinal)
-					|| mod.assembly == null)
+					|| mod.assemblies == null)
 				{
 					continue;
 				}
 
-				foreach (Type type in mod.assembly.GetTypes())
+				foreach (Type type in mod.assemblies.SelectMany(static assembly => assembly.GetTypes()))
 				{
 					if (!type.IsAbstract
 						&& !type.IsInterface

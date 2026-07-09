@@ -181,6 +181,7 @@ public abstract class DecisiveDuelBoss : MonsterModel
 				damage,
 				ValueProp.Move,
 				Creature,
+				null,
 				null);
 		}
 	}

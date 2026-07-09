@@ -35,11 +35,13 @@ internal static partial class IntegratedStrategyEventRewards
 		CardType? type = null,
 		string sourceName = "integrated strategy event")
 	{
-		List<CardModel> pool = CreateRarityCardPool(owner.Character.CardPool.AllCards, rarity, type, sourceName);
+		// 0.108 起 CardCreationOptions 只接受卡池+过滤器；沿用旧清单逻辑转为集合过滤。
+		HashSet<CardModel> pool = [.. CreateRarityCardPool(owner.Character.CardPool.AllCards, rarity, type, sourceName)];
 		CardCreationOptions options = new(
-			pool,
+			[owner.Character.CardPool],
 			CardCreationSource.Other,
-			CardRarityOddsType.Uniform);
+			CardRarityOddsType.Uniform,
+			pool.Contains);
 		return new CardReward(options, optionCount, owner);
 	}
 
@@ -61,10 +63,12 @@ internal static partial class IntegratedStrategyEventRewards
 			throw new InvalidOperationException($"No colorless cards were available for {sourceName}.");
 		}
 
+		HashSet<CardModel> poolSet = [.. pool];
 		CardCreationOptions options = new(
-			pool,
+			[ModelDb.CardPool<ColorlessCardPool>()],
 			CardCreationSource.Other,
-			CardRarityOddsType.Uniform);
+			CardRarityOddsType.Uniform,
+			poolSet.Contains);
 		return new CardReward(options, optionCount, owner);
 	}
 

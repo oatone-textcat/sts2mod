@@ -31,9 +31,9 @@ public sealed class FurnaceFinaleAmiya : MonsterModel
 	public const string SilentHopeMoveId = "SILENT_HOPE_MOVE";
 	public const string BlackCrownMoveId = "BLACK_CROWN_MOVE";
 
-	private const int InitialHp = 480;
-	private const int PhaseTwoHardenedShell = 120;
-	private const int EndDamage = 10;
+	private const int InitialHp = 550;
+	private const int PhaseTwoHardenedShell = 150;
+	private const int EndDamage = 12;
 	private const int EndHits = 2;
 	private const int EndStrengthGain = 1;
 	private const int BlackCrownDamage = 25;

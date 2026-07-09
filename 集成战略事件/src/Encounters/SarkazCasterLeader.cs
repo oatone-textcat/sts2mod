@@ -19,7 +19,7 @@ public sealed class SarkazCasterLeader : MonsterModel
 	public const string AttackMoveId = "ATTACK_MOVE";
 
 	private const int InitialHp = 58;
-	private const int AttackDamage = 12;
+	private const int AttackDamage = 14;
 	private const int ChainsAmount = 1;
 	private const float ShacklesAttackDelay = 0.75f;
 	private const float AttackHitDelay = 0.75f;

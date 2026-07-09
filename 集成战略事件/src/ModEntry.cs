@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.Models.CardPools;
 using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.RelicPools;
 using MegaCrit.Sts2.Core.Saves.Runs;
+using STS2RitsuLib.Content;
 
 namespace IntegratedStrategyEvents;
 
@@ -27,6 +28,7 @@ public static class ModEntry
 		InjectSavedPropertyCaches();
 		RegisterRelics();
 		RegisterCards();
+		RegisterActEvents();
 		EnsureModelsRegisteredIfModelDbAlreadyInitialized();
 		HarmonyInstance ??= new Harmony(ModInfo.HarmonyId);
 		IntegratedStrategyMapReflectionCache.Validate();
@@ -70,6 +72,18 @@ public static class ModEntry
 		}
 	}
 
+	private static void RegisterActEvents()
+	{
+		ModContentRegistry registry = ModContentRegistry.For(ModInfo.ModId);
+		foreach ((Type eventType, Type[] actTypes) in IntegratedStrategyEventSpawnRules.ActRegistrations)
+		{
+			foreach (Type actType in actTypes)
+			{
+				registry.RegisterActEvent(actType, eventType);
+			}
+		}
+	}
+
 	private static void EnsureModelsRegisteredIfModelDbAlreadyInitialized()
 	{
 		if (!ModelDb.Contains(typeof(Ironclad)))
@@ -77,6 +91,13 @@ public static class ModEntry
 			return;
 		}
 
+		EnsureModelsRegistered();
+	}
+
+	// BaseLib 时代由其 ModelDb 补丁负责注入自定义模型；现在改为本模组自行保证：
+	// 初始化时若 ModelDb 已就绪立即注入，否则由 ModelDb.InitIds 的 postfix 兜底。
+	internal static void EnsureModelsRegistered()
+	{
 		foreach (Type type in IntegratedStrategyContent.ModelTypes)
 		{
 			if (ModelDb.Contains(type))
@@ -88,5 +109,14 @@ public static class ModEntry
 			ModelId id = ModelDb.GetId(type);
 			ModelDb.GetById<AbstractModel>(id).InitId(id);
 		}
+	}
+}
+
+[HarmonyPatch(typeof(ModelDb), nameof(ModelDb.InitIds))]
+internal static class IntegratedStrategyModelDbInitIdsPatch
+{
+	private static void Postfix()
+	{
+		ModEntry.EnsureModelsRegistered();
 	}
 }

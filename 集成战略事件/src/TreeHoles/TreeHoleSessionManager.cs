@@ -42,10 +42,12 @@ internal static class TreeHoleSessionManager
 
 		// 终局奖励 proceed 之后房间会一直停留在 Treasure/Combat（不会再进 MapRoom），
 		// 若 proceed 时的单次返回请求丢失，只认 MapRoom 会让玩家永久卡在树洞层；
-		// proceed 标记 + 房间已结算(IsPreFinished) 时同样允许触发返回。
+		// proceed 标记 + 房间已结算时同样允许触发返回。宝箱房没有 IsPreFinished
+		// 信号（原版恒 false），但 proceed 标记在每次进房时都会被清除，标记仍在
+		// 即代表玩家已在当前宝箱房里点过"前进"，可视作已结算。
 		if (state.CurrentRoom is not MapRoom &&
 			!(SessionStore.HasTerminalRewardsProceeded(state) &&
-			  state.CurrentRoom is { IsPreFinished: true }))
+			  state.CurrentRoom is TreasureRoom or { IsPreFinished: true }))
 		{
 			return false;
 		}
@@ -70,6 +72,26 @@ internal static class TreeHoleSessionManager
 
 		SessionStore.AddTerminalRewardsProceeded(state);
 		SessionStore.RemoveCompletionSuppression(state);
+	}
+
+	// 宝箱房的"前进"按钮直接 NMapScreen.Open()，不经过 RunManager.ProceedFromTerminalRewardsScreen，
+	// 精英终点依赖的 proceed 补丁对宝箱终点不会触发。这里由 NTreasureRoom 前进按钮的补丁调用，
+	// 在终点宝箱房补齐与精英路径对称的标记+立即返回。
+	public static void HandleTerminalTreasureRoomProceed()
+	{
+		RunState? state = RunManager.Instance.DebugOnlyGetState();
+		if (state == null ||
+			!SessionStore.TryGetTreeHoleSession(state, out TreeHoleSession session) ||
+			state.CurrentRoom is not TreasureRoom ||
+			!state.CurrentMapCoord.HasValue ||
+			!state.CurrentMapCoord.Value.Equals(session.TerminalCoord))
+		{
+			return;
+		}
+
+		SessionStore.AddTerminalRewardsProceeded(state);
+		SessionStore.RemoveCompletionSuppression(state);
+		TryRestoreCompletedCurrentRunAfterTerminalProceed();
 	}
 
 	public static bool TryRestoreCompletedCurrentRunAfterTerminalProceed()
@@ -221,6 +243,7 @@ internal static class TreeHoleSessionManager
 				TreeHoleSaveKind.AbyssalJungleFinale => SpecialFinaleKind.AbyssalJungle,
 				TreeHoleSaveKind.AbyssalJungleIsharmlaFinale => SpecialFinaleKind.AbyssalJungleIsharmla,
 				TreeHoleSaveKind.ProphetHornFragment => SpecialFinaleKind.ProphetHornFragment,
+				TreeHoleSaveKind.DesireHallFinale => SpecialFinaleKind.DesireHall,
 				_ => SpecialFinaleKind.EndlessFinale
 			};
 			SessionStore.SetFinaleSession(state, new EndlessFinaleSession(
@@ -255,6 +278,20 @@ internal static class TreeHoleSessionManager
 			(ReferenceEquals(session.TreeHoleMap, map) || MapContainsCoord(map, session.TerminalCoord));
 	}
 
+	/// <summary>当前跑局的树洞图或任意 kind 的终局会话图（等价于逐 kind 的 IsCurrent*Map 全并集）。</summary>
+	public static bool IsCurrentAnyTemporaryMap(ActMap map)
+	{
+		if (IsCurrentTreeHoleMap(map))
+		{
+			return true;
+		}
+
+		RunState? state = RunManager.Instance.DebugOnlyGetState();
+		return state != null &&
+			SessionStore.TryGetFinaleSession(state, out EndlessFinaleSession session) &&
+			IsSessionFinaleMap(state, session, map);
+	}
+
 	public static bool IsCurrentEndlessFinaleMap(ActMap map)
 	{
 		return IsCurrentFinaleMap(map, SpecialFinaleKind.EndlessFinale);
@@ -273,6 +310,11 @@ internal static class TreeHoleSessionManager
 	public static bool IsCurrentCarefreeViharaFinaleMap(ActMap map)
 	{
 		return IsCurrentFinaleMap(map, SpecialFinaleKind.CarefreeVihara);
+	}
+
+	public static bool IsCurrentDesireHallFinaleMap(ActMap map)
+	{
+		return IsCurrentFinaleMap(map, SpecialFinaleKind.DesireHall);
 	}
 
 	public static bool IsCurrentAbyssalJungleFinaleMap(ActMap map)
@@ -425,6 +467,7 @@ internal static class TreeHoleSessionManager
 		TreeHoleRunAccessor.RestoreActRooms(state, session.OriginalActSave);
 		RefreshLocationSynchronizers(state);
 		SessionStore.AddPendingArchitectCompletion(state);
+		ResetActChangeTransitionMemory();
 		Log.Info($"{ModInfo.LogPrefix} Returned from {session.DestinationActName} finale before entering The Architect.");
 	}
 
@@ -444,7 +487,19 @@ internal static class TreeHoleSessionManager
 		TreeHoleRunAccessor.RestoreActRooms(state, session.OriginalActSave);
 		RefreshLocationSynchronizers(state);
 		SetMapScreen(session.OriginalMap, state, initMarker: state.CurrentMapCoord.HasValue);
+		ResetActChangeTransitionMemory();
 		Log.Info($"{ModInfo.LogPrefix} Returned from {session.DestinationActName} finale.");
+	}
+
+	// 终局/断章插层从当前幕额外消耗了一次 act 转换，0.108 的 ActChangeSynchronizer 会记住
+	// "已从该幕转换过"并拦截后续同幕转换（例如返回后打完本幕 BOSS 的正常进下一幕）。
+	// 返回原图时清掉这份记忆，让插层对原版转换语义完全透明。
+	private static void ResetActChangeTransitionMemory()
+	{
+		if (RunManager.Instance?.ActChangeSynchronizer is { } synchronizer)
+		{
+			IntegratedStrategyFinaleActChangeGuardPatch.ResetTransitionMemory(synchronizer);
+		}
 	}
 
 	public static void RestoreMapPointHistory(

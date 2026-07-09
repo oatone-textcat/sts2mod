@@ -17,14 +17,14 @@ public sealed class HaranduhEarthwhip : DecisiveDuelBoss
 	public const string ConquerMoveId = "CONQUER_MOVE";
 	public const string SharpenBladeMoveId = "SHARPEN_BLADE_MOVE";
 
-	private const int InitialHpValue = 500;
-	private const int SlashDamage = 8;
+	private const int InitialHpValue = 600;
+	private const int SlashDamage = 10;
 	private const int SlashHits = 2;
-	private const int HeavySlashDamage = 10;
+	private const int HeavySlashDamage = 12;
 	private const int PlayerVulnerableAmount = 1;
 	private const int NonPlayerVulnerableAmount = 2;
-	private const int ConquerDamage = 30;
-	private const int SharpenBladeStrengthAmount = 2;
+	private const int ConquerDamage = 36;
+	private const int SharpenBladeStrengthAmount = 3;
 	private const float SlashHitDelay = 0.8f;
 	private const float HeavySlashHitDelay = 0.8f;
 	private const float PrepareDelay = 0.8f;

@@ -21,10 +21,10 @@ public sealed class SaintguardAutomaton : MonsterModel
 	public const string SecondAccelerateMoveId = "SECOND_ACCELERATE_MOVE";
 	public const string SelfDestructMoveId = "SELF_DESTRUCT_MOVE";
 
-	private const int InitialHp = 40;
-	private const int SelfDestructDamage = 10;
+	private const int InitialHp = 50;
+	private const int SelfDestructDamage = 14;
 	private const decimal ArtifactAmount = 1m;
-	private const decimal VigorAmount = 5m;
+	private const decimal VigorAmount = 6m;
 	private const float IdleSpeedMultiplierPerAccelerate = 2f;
 	private const float AccelerateDelay = 0.35f;
 	private const float SelfDestructHitDelay = 0.25f;

@@ -31,17 +31,17 @@ public sealed class BozhokastiSaintguardGunner : MonsterModel
 	public const string SweepFireRiteMoveId = "SWEEP_FIRE_RITE_MOVE";
 	public const string HolyCityCareRiteMoveId = "HOLY_CITY_CARE_RITE_MOVE";
 
-	private const int InitialHp = 300;
+	private const int InitialHp = 450;
 	private const decimal InitialSaintguardShield = 3m;
-	private const int ButtStrikeDamage = 15;
-	private const int HeavyButtStrikeDamage = 10;
+	private const int ButtStrikeDamage = 18;
+	private const int HeavyButtStrikeDamage = 13;
 	private const int HeavyButtStrikeHits = 2;
 	private const decimal HoldShieldStrengthGain = 2m;
-	private const decimal HoldShieldBlockGain = 20m;
-	private const decimal LoadAmmoStrengthGain = 1m;
-	private const int SweepFireDamage = 3;
-	private const int SweepFireHits = 8;
-	private const decimal HolyCityCarePlating = 10m;
+	private const decimal HoldShieldBlockGain = 25m;
+	private const decimal LoadAmmoStrengthGain = 2m;
+	private const int SweepFireDamage = 4;
+	private const int SweepFireHits = 10;
+	private const decimal HolyCityCarePlating = 12m;
 
 	private const float SummonDelay = 0.9f;
 	private const float ButtStrikeHitDelay = 0.55f;

@@ -40,15 +40,16 @@ public sealed class IzumikEcologicalFountain : MonsterModel, IIzumikEcologicalFo
 	public const string LearningMoveId = "LEARNING_MOVE";
 	public const string ShockMoveId = "SHOCK_MOVE";
 
-	private const int InitialMaxHp = 500;
-	private const int InitialCurrentHp = 200;
+	private const int InitialMaxHp = 650;
+	// 开局 40% 最大生命，随后三次回春每次回复 20% 最大生命（合计回满）。
+	private const decimal InitialCurrentHpRatio = 0.4m;
+	private const decimal RejuvenationHealRatio = 0.2m;
 	private const decimal InitialIntangible = 3m;
-	private const int RejuvenationHeal = 100;
-	private const int InterpretationDamage = 6;
+	private const int InterpretationDamage = 8;
 	private const int InterpretationHits = 2;
-	private const int LearningHeal = 15;
-	private const int LearningBlock = 15;
-	private const int ShockDamage = 30;
+	private const int LearningHeal = 20;
+	private const int LearningBlock = 20;
+	private const int ShockDamage = 38;
 	private const int ShockDazedCount = 3;
 	private const float IdleMoveDelay = 0.45f;
 	private const float ReviveDelay = 0.9f;
@@ -149,8 +150,7 @@ public sealed class IzumikEcologicalFountain : MonsterModel, IIzumikEcologicalFo
 
 	private async Task SetScaledInitialCurrentHp()
 	{
-		decimal hpRatio = InitialCurrentHp / (decimal)InitialMaxHp;
-		await CreatureCmd.SetCurrentHp(Creature, Math.Ceiling(Creature.MaxHp * hpRatio));
+		await CreatureCmd.SetCurrentHp(Creature, Math.Ceiling(Creature.MaxHp * InitialCurrentHpRatio));
 	}
 
 	private void AfterPowerApplied(PowerModel power)
@@ -218,7 +218,7 @@ public sealed class IzumikEcologicalFountain : MonsterModel, IIzumikEcologicalFo
 	{
 		_ = targets;
 		await Cmd.Wait(IdleMoveDelay);
-		await CreatureCmd.Heal(Creature, RejuvenationHeal);
+		await CreatureCmd.Heal(Creature, Math.Ceiling(Creature.MaxHp * RejuvenationHealRatio));
 		if (playReviveAfterHeal)
 		{
 			await MonsterAnimationHelper.TriggerAnimWithFixedWait(Creature, ReviveTrigger, ReviveDelay);

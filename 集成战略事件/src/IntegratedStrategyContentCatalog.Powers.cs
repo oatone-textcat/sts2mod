@@ -16,6 +16,8 @@ internal static partial class IntegratedStrategyContentCatalog
 		typeof(LugalszargusDecisivePower),
 		typeof(HaranduhDecisivePower),
 		typeof(SnowMonsterPower),
-		typeof(NonAttachmentPower)
+		typeof(NonAttachmentPower),
+		typeof(MasterworkPower),
+		typeof(SorrowfulLockTemporaryThornsPower)
 	];
 }

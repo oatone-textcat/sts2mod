@@ -12,7 +12,7 @@ internal static partial class IntegratedStrategyEventRewards
 		PotionRarity? preferredRarity = null,
 		string sourceName = "integrated strategy event")
 	{
-		List<PotionModel> options = PotionFactory.GetPotionOptions(owner, Array.Empty<PotionModel>()).ToList();
+		List<PotionModel> options = PotionFactory.GetPotionOptions(owner).ToList();
 		if (options.Count == 0)
 		{
 			throw new InvalidOperationException($"No potion options were available for {sourceName}.");

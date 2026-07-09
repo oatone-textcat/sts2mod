@@ -8,18 +8,7 @@ public sealed class BozhokastiSaintguardGunnerBossEncounterHook :
 	protected override Task BeforeIntegratedStrategyCombatStart(CombatState combatState)
 	{
 		_ = combatState;
-		BozhokastiSaintguardGunnerMusicController.Play();
-		return Task.CompletedTask;
-	}
-}
-
-public sealed class BozhokastiSaintguardGunnerTestEncounterHook :
-	IntegratedStrategyEncounterHook<BozhokastiSaintguardGunnerTestEncounter>
-{
-	protected override Task BeforeIntegratedStrategyCombatStart(CombatState combatState)
-	{
-		_ = combatState;
-		BozhokastiSaintguardGunnerMusicController.Play();
+		IntegratedStrategyBossMusic.Bozhokasti.Play();
 		return Task.CompletedTask;
 	}
 }

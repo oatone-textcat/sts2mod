@@ -83,7 +83,8 @@ internal static class IntegratedStrategyEventReplay
 		return eventType == typeof(VoidPortentEvent) ||
 			eventType == typeof(ChangeEvent) ||
 			eventType == typeof(PrimordialDivergenceEvent) ||
-			eventType == typeof(BeginningEvent);
+			eventType == typeof(BeginningEvent) ||
+			eventType == typeof(LiberationEvent);
 	}
 
 	public static bool IsSecondActOpeningBranch(EventModel eventModel)

@@ -26,8 +26,10 @@ internal static class IntegratedStrategyMapLengthPatch
 [HarmonyPatch(typeof(RoomSet), nameof(RoomSet.EnsureNextEventIsValid))]
 internal static class IntegratedStrategyFirstEventPatch
 {
+	private const string SecondActOpeningEventRngName = "integrated_strategy_second_act_opening_event";
+
 	private const int SecondActIndex = 1;
-	private const int FirstEventBranchCount = 4;
+	private const int FirstEventBranchCount = 5;
 	private static readonly ConditionalWeakTable<RunState, FirstEventChoice> FirstEventChoices = new();
 
 	public static bool TryGetForcedEventType(RunState runState, out Type eventType)
@@ -169,6 +171,12 @@ internal static class IntegratedStrategyFirstEventPatch
 			return false;
 		}
 
+		if (choice.Branch == FirstEventBranch.Liberation)
+		{
+			RoomSet.SwapToOrCreateAtIndex<EventModel, LiberationEvent>(__instance.events, desiredIndex);
+			return false;
+		}
+
 		RoomSet.SwapToOrCreateAtIndex<EventModel, VoidPortentEvent>(__instance.events, desiredIndex);
 		return false;
 	}
@@ -177,9 +185,9 @@ internal static class IntegratedStrategyFirstEventPatch
 	{
 		uint seed = IntegratedStrategyStableRng.CreateSeed(
 			runState.Rng.Seed,
-			"integrated_strategy_second_act_opening_event",
+			SecondActOpeningEventRngName,
 			unchecked((uint)runState.CurrentActIndex));
-		MegaCrit.Sts2.Core.Random.Rng rng = new(seed, "integrated_strategy_second_act_opening_event");
+		MegaCrit.Sts2.Core.Random.Rng rng = new(seed, SecondActOpeningEventRngName);
 		return new FirstEventChoice((FirstEventBranch)rng.NextInt(FirstEventBranchCount));
 	}
 
@@ -194,15 +202,18 @@ internal static class IntegratedStrategyFirstEventPatch
 			FirstEventBranch.Change => typeof(ChangeEvent),
 			FirstEventBranch.PrimordialDivergence => typeof(PrimordialDivergenceEvent),
 			FirstEventBranch.Beginning => typeof(BeginningEvent),
+			FirstEventBranch.Liberation => typeof(LiberationEvent),
 			_ => typeof(VoidPortentEvent)
 		};
 	}
 
 	public static bool ShouldForceSecondActOpeningEvent(RunState runState)
 	{
+		// 秘境节点保留树洞事件；结局分支顺延到二层第一个非秘境事件节点。
 		return runState.CurrentActIndex == SecondActIndex &&
 			!IntegratedStrategyTreeHoleController.IsActive(runState) &&
 			IsAtUnknownMapPoint(runState) &&
+			!IntegratedStrategySecretMapNodeController.IsAtSecretNode(runState) &&
 			!HasVisitedOrdinaryEventInCurrentAct(runState);
 	}
 
@@ -218,10 +229,13 @@ internal static class IntegratedStrategyFirstEventPatch
 
 	private static bool HasVisitedOrdinaryEventInCurrentAct(RunState runState)
 	{
+		// 秘境节点强制的树洞类事件不占用"首个普通事件"额度，
+		// 否则先踩到秘境会吞掉结局分支事件。
 		return runState.MapPointHistory.Count > runState.CurrentActIndex &&
 			runState.MapPointHistory[runState.CurrentActIndex].Any(static entry =>
 				entry.MapPointType == MapPointType.Unknown &&
-				entry.Rooms.Any(static room => room.RoomType == RoomType.Event));
+				entry.Rooms.Any(static room => room.RoomType == RoomType.Event &&
+					!IntegratedStrategySecretMapNodeController.IsSecretNodeForcedEventId(room.ModelId)));
 	}
 
 	private enum FirstEventBranch
@@ -229,7 +243,8 @@ internal static class IntegratedStrategyFirstEventPatch
 		VoidPortent,
 		Change,
 		PrimordialDivergence,
-		Beginning
+		Beginning,
+		Liberation
 	}
 
 	private sealed record FirstEventChoice(FirstEventBranch Branch);

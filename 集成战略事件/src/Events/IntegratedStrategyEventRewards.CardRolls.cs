@@ -16,10 +16,13 @@ internal static partial class IntegratedStrategyEventRewards
 		CardType type,
 		string sourceName = "integrated strategy event")
 	{
+		HashSet<CardModel> pool =
+			[.. CreateRarityCardPool(owner.Character.CardPool.AllCards, CardRarity.Rare, type, sourceName)];
 		CardCreationOptions options = new CardCreationOptions(
-				CreateRarityCardPool(owner.Character.CardPool.AllCards, CardRarity.Rare, type, sourceName),
+				[owner.Character.CardPool],
 				CardCreationSource.Other,
-				CardRarityOddsType.Uniform)
+				CardRarityOddsType.Uniform,
+				pool.Contains)
 			.WithFlags(CardCreationFlags.NoModifyHooks);
 
 		return CardFactory.CreateForReward(owner, 1, options).FirstOrDefault()

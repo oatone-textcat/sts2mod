@@ -2,7 +2,7 @@ using MegaCrit.Sts2.Core.Map;
 
 namespace IntegratedStrategyEvents.TreeHoles;
 
-internal sealed class IntegratedStrategyEternalDustFinaleActMap : ActMap
+internal sealed class IntegratedStrategyEternalDustFinaleActMap : ActMap, IIntegratedStrategyTemporaryActMap
 {
 	private const int GridWidth = 7;
 	private const int GridRows = 4;

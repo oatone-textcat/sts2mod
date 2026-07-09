@@ -11,7 +11,7 @@ using MegaCrit.Sts2.Core.Saves;
 
 namespace IntegratedStrategyEvents.Encounters;
 
-internal abstract class EncounterMusicController
+internal class EncounterMusicController
 {
 	private static readonly FieldInfo? RunMusicProxyField =
 		AccessTools.Field(typeof(NRunMusicController), "_proxy");
@@ -26,7 +26,7 @@ internal abstract class EncounterMusicController
 	private bool _isPlaying;
 	private bool _isInstalled;
 
-	protected EncounterMusicController(
+	public EncounterMusicController(
 		string playerName,
 		string trackPath,
 		float volumeScale,
@@ -38,6 +38,16 @@ internal abstract class EncounterMusicController
 		_volumeScale = volumeScale;
 		_logName = logName;
 		_isTargetEncounter = isTargetEncounter;
+	}
+
+	public void Play()
+	{
+		PlayMusic();
+	}
+
+	public void Stop(bool restoreGameMusic)
+	{
+		StopMusic(restoreGameMusic);
 	}
 
 	protected void PlayMusic()

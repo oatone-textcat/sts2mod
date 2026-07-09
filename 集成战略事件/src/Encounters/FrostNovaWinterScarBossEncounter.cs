@@ -16,7 +16,7 @@ public sealed class FrostNovaWinterScarBossEncounter : IntegratedStrategyBossEnc
 	[
 		BossNodePathBase + ".png",
 		BossNodePathBase + "_outline.png",
-		FrostNovaWinterScarMusicController.TrackPath
+		IntegratedStrategyBossMusic.FrostNovaTrackPath
 	];
 
 	public override IEnumerable<MonsterModel> AllPossibleMonsters =>

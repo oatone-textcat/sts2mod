@@ -5,13 +5,15 @@ namespace IntegratedStrategyEvents.TreeHoles;
 
 internal static class TreeHoleSeedFactory
 {
+	public const string TreeHoleMapRngName = "integrated_strategy_tree_hole_map";
+
 	public static uint CreateTreeHoleMapSeed(RunState state, string destinationActName, string stageLabel)
 	{
 		uint destinationHash = IntegratedStrategyStableRng.HashString(destinationActName);
 		uint stageHash = IntegratedStrategyStableRng.HashString(stageLabel);
 		return IntegratedStrategyStableRng.CreateSeed(
 			state.Rng.Seed,
-			"integrated_strategy_tree_hole_map",
+			TreeHoleMapRngName,
 			unchecked((uint)state.CurrentActIndex),
 			IntegratedStrategyStableRng.HashCoord(state.CurrentMapCoord),
 			destinationHash,

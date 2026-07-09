@@ -1,4 +1,5 @@
-using BaseLib.Abstracts;
+using STS2RitsuLib.Scaffolding.Content;
+using STS2RitsuLib.Scaffolding.Content.Patches;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -11,8 +12,14 @@ using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace IntegratedStrategyEvents.Powers;
 
-public sealed class IsharmlaRingingHexRestorePower : PowerModel, ICustomPower
+public sealed class IsharmlaRingingHexRestorePower : PowerModel, IModPowerAssetOverrides
 {
+	public PowerAssetProfile AssetProfile => PowerAssetProfile.Empty;
+
+	public string? CustomIconPath => null;
+
+	public string? CustomBigIconPath => null;
+
 	private sealed class Data
 	{
 		public bool HasRestored { get; set; }

@@ -1,4 +1,5 @@
-using BaseLib.Abstracts;
+using STS2RitsuLib.Scaffolding.Content;
+using STS2RitsuLib.Scaffolding.Content.Patches;
 using IntegratedStrategyEvents.Encounters;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -7,8 +8,10 @@ using MegaCrit.Sts2.Core.Models;
 
 namespace IntegratedStrategyEvents.Powers;
 
-public sealed class IzumikSurvivalPower : PowerModel, ICustomPower
+public sealed class IzumikSurvivalPower : PowerModel, IModPowerAssetOverrides
 {
+	public PowerAssetProfile AssetProfile => PowerAssetProfile.Empty;
+
 	private const string LoopPowerPackedIconPath = "res://images/atlases/power_atlas.sprites/loop_power.tres";
 	private const string LoopPowerBigIconPath = "res://images/powers/loop_power.png";
 
@@ -16,7 +19,7 @@ public sealed class IzumikSurvivalPower : PowerModel, ICustomPower
 
 	public override PowerStackType StackType => PowerStackType.Single;
 
-	public string? CustomPackedIconPath => LoopPowerPackedIconPath;
+	public string? CustomIconPath => LoopPowerPackedIconPath;
 
 	public string? CustomBigIconPath => LoopPowerBigIconPath;
 

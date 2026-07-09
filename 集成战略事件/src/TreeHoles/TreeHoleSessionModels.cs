@@ -42,7 +42,8 @@ internal enum TreeHoleSaveKind
 	CarefreeViharaFinale,
 	AbyssalJungleFinale,
 	AbyssalJungleIsharmlaFinale,
-	ProphetHornFragment
+	ProphetHornFragment,
+	DesireHallFinale
 }
 
 internal enum SpecialFinaleKind
@@ -53,7 +54,8 @@ internal enum SpecialFinaleKind
 	CarefreeVihara,
 	AbyssalJungle,
 	AbyssalJungleIsharmla,
-	ProphetHornFragment
+	ProphetHornFragment,
+	DesireHall
 }
 
 internal sealed record TreeHoleSaveSnapshot(

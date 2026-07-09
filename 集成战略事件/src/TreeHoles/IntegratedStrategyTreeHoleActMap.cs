@@ -3,7 +3,7 @@ using MegaCrit.Sts2.Core.Random;
 
 namespace IntegratedStrategyEvents.TreeHoles;
 
-internal sealed class IntegratedStrategyTreeHoleActMap : ActMap
+internal sealed class IntegratedStrategyTreeHoleActMap : ActMap, IIntegratedStrategyTemporaryActMap
 {
 	private const int GridWidth = 7;
 	private const int MapLength = 5;
@@ -105,13 +105,12 @@ internal sealed class IntegratedStrategyTreeHoleActMap : ActMap
 	private static MapPointType RollPointType(Rng rng, bool isFirstNode, bool allowElite, ref bool hasShop)
 	{
 		List<MapPointType> pool = isFirstNode
-			? [MapPointType.Unknown, MapPointType.Treasure, MapPointType.Treasure, MapPointType.RestSite]
+			? [MapPointType.Unknown, MapPointType.Treasure, MapPointType.RestSite]
 			:
 			[
 				MapPointType.Monster,
 				MapPointType.Monster,
 				MapPointType.Unknown,
-				MapPointType.Treasure,
 				MapPointType.Treasure,
 				MapPointType.RestSite
 			];

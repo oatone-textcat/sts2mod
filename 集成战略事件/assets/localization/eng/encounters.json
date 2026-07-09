@@ -103,5 +103,17 @@
   "FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.title": "FrostNova, Winter's Scar Test",
   "FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.loss": "The cold wave rolls over the field, leaving only silence.",
   "INTEGRATEDSTRATEGYEVENTS-FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.title": "FrostNova, Winter's Scar Test",
-  "INTEGRATEDSTRATEGYEVENTS-FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.loss": "The cold wave rolls over the field, leaving only silence."
+  "INTEGRATEDSTRATEGYEVENTS-FROST_NOVA_WINTER_SCAR_TEST_ENCOUNTER.loss": "The cold wave rolls over the field, leaving only silence.",
+  "sorrowfulLockTestEncounter.title": "Sorrowful Lock",
+  "SORROWFUL_LOCK_TEST_ENCOUNTER.title": "Sorrowful Lock",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_TEST_ENCOUNTER.title": "Sorrowful Lock",
+  "sorrowfulLockTestEncounter.loss": "{character} fell in [gold]{encounter}[/gold].",
+  "SORROWFUL_LOCK_TEST_ENCOUNTER.loss": "{character} fell in [gold]{encounter}[/gold].",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_TEST_ENCOUNTER.loss": "{character} fell in [gold]{encounter}[/gold].",
+  "sorrowfulLockBossEncounter.title": "Sorrowful Lock",
+  "SORROWFUL_LOCK_BOSS_ENCOUNTER.title": "Sorrowful Lock",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_BOSS_ENCOUNTER.title": "Sorrowful Lock",
+  "sorrowfulLockBossEncounter.loss": "{character} fell in [gold]{encounter}[/gold].",
+  "SORROWFUL_LOCK_BOSS_ENCOUNTER.loss": "{character} fell in [gold]{encounter}[/gold].",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_BOSS_ENCOUNTER.loss": "{character} fell in [gold]{encounter}[/gold]."
 }

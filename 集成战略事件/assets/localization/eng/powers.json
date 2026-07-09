@@ -68,5 +68,17 @@
   "INTEGRATEDSTRATEGYEVENTS-NON_ATTACHMENT_POWER.title": "Non-Attachment",
   "nonAttachmentPower.description": "At the start of the third round, enter the Free phase.",
   "NON_ATTACHMENT_POWER.description": "At the start of the third round, enter the Free phase.",
-  "INTEGRATEDSTRATEGYEVENTS-NON_ATTACHMENT_POWER.description": "At the start of the third round, enter the Free phase."
+  "INTEGRATEDSTRATEGYEVENTS-NON_ATTACHMENT_POWER.description": "At the start of the third round, enter the Free phase.",
+  "masterworkPower.title": "Masterwork",
+  "MASTERWORK_POWER.title": "Masterwork",
+  "INTEGRATEDSTRATEGYEVENTS-MASTERWORK_POWER.title": "Masterwork",
+  "masterworkPower.smartDescription": "After taking [blue]{Amount}[/blue] more instances of damage, gains [blue]5[/blue] [gold]Vigor[/gold] and [blue]1[/blue] temporary [gold]Thorns[/gold].",
+  "MASTERWORK_POWER.smartDescription": "After taking [blue]{Amount}[/blue] more instances of damage, gains [blue]5[/blue] [gold]Vigor[/gold] and [blue]1[/blue] temporary [gold]Thorns[/gold].",
+  "INTEGRATEDSTRATEGYEVENTS-MASTERWORK_POWER.smartDescription": "After taking [blue]{Amount}[/blue] more instances of damage, gains [blue]5[/blue] [gold]Vigor[/gold] and [blue]1[/blue] temporary [gold]Thorns[/gold].",
+  "sorrowfulLockTemporaryThornsPower.title": "Temporary Thorns",
+  "SORROWFUL_LOCK_TEMPORARY_THORNS_POWER.title": "Temporary Thorns",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_TEMPORARY_THORNS_POWER.title": "Temporary Thorns",
+  "sorrowfulLockTemporaryThornsPower.smartDescription": "At the end of its turn, loses [blue]{Amount}[/blue] [gold]Thorns[/gold].",
+  "SORROWFUL_LOCK_TEMPORARY_THORNS_POWER.smartDescription": "At the end of its turn, loses [blue]{Amount}[/blue] [gold]Thorns[/gold].",
+  "INTEGRATEDSTRATEGYEVENTS-SORROWFUL_LOCK_TEMPORARY_THORNS_POWER.smartDescription": "At the end of its turn, loses [blue]{Amount}[/blue] [gold]Thorns[/gold]."
 }

@@ -1,4 +1,3 @@
-using BaseLib.Abstracts;
 
 namespace IntegratedStrategyEvents.Events;
 

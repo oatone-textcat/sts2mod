@@ -60,6 +60,7 @@ internal static partial class IntegratedStrategyContentCatalog
 		typeof(AnomalousReportEvent),
 		typeof(ChangeEvent),
 		typeof(BeginningEvent),
+		typeof(LiberationEvent),
 		typeof(SublimationEvent),
 		typeof(ReconstructionEvent),
 		typeof(ExplorerSmallStepEvent),

@@ -16,7 +16,7 @@ public sealed class KuilongMahasattvaAvatarBossEncounter : IntegratedStrategyBos
 	[
 		BossNodePathBase + ".png",
 		BossNodePathBase + "_outline.png",
-		KuilongMahasattvaAvatarMusicController.TrackPath
+		IntegratedStrategyBossMusic.KuilongTrackPath
 	];
 
 	public override IEnumerable<MonsterModel> AllPossibleMonsters =>

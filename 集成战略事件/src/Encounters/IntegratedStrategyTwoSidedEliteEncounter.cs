@@ -1,10 +1,10 @@
-using BaseLib.Abstracts;
 using Godot;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Acts;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Rooms;
+using STS2RitsuLib.Scaffolding.Content;
 
 namespace IntegratedStrategyEvents.Encounters;
 
@@ -12,38 +12,27 @@ public abstract class IntegratedStrategyTwoSidedEliteEncounter<TMonster> :
 	IntegratedStrategyTwoSidedEncounter<TMonster>
 	where TMonster : MonsterModel
 {
-	protected IntegratedStrategyTwoSidedEliteEncounter()
-		: base(RoomType.Elite)
-	{
-	}
+	public override RoomType RoomType => RoomType.Elite;
 }
 
 public abstract class IntegratedStrategyTwoSidedBossEncounter<TMonster> :
 	IntegratedStrategyTwoSidedEncounter<TMonster>
 	where TMonster : MonsterModel
 {
-	protected IntegratedStrategyTwoSidedBossEncounter()
-		: base(RoomType.Boss)
-	{
-	}
+	public override RoomType RoomType => RoomType.Boss;
 }
 
-public abstract class IntegratedStrategyTwoSidedEncounter<TMonster> : CustomEncounterModel
+public abstract class IntegratedStrategyTwoSidedEncounter<TMonster> : ModEncounterTemplate
 	where TMonster : MonsterModel
 {
 	public const string LeftSlot = "crusher";
 	public const string RightSlot = "rocket";
 
-	protected IntegratedStrategyTwoSidedEncounter(RoomType roomType)
-		: base(roomType, autoAdd: false)
-	{
-	}
-
 	public override bool FullyCenterPlayers => true;
 
 	public override IReadOnlyList<string> Slots => [LeftSlot, RightSlot];
 
-	public override string? CustomScenePath => SceneHelper.GetScenePath("encounters/kaiser_crab_boss");
+	public override string? CustomEncounterScenePath => SceneHelper.GetScenePath("encounters/kaiser_crab_boss");
 
 	public override IEnumerable<MonsterModel> AllPossibleMonsters => [Monster<TMonster>()];
 

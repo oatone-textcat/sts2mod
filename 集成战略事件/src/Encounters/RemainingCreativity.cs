@@ -20,7 +20,7 @@ public sealed class RemainingCreativity : MonsterModel
 	public const string SelfDestructMoveId = "SELF_DESTRUCT_MOVE";
 
 	private const int InitialHp = 24;
-	private const int SelfDestructDamage = 12;
+	private const int SelfDestructDamage = 15;
 	private const string SelfDestructTrigger = "ExplodeTrigger";
 	private const string SelfDestructSfxPath = "event:/sfx/enemy/enemy_attacks/living_fog/living_fog_explode";
 	private const string DeathSfxPath = "event:/sfx/enemy/enemy_attacks/living_fog/living_fog_minion_die";

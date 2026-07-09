@@ -17,13 +17,13 @@ public sealed class LugalszargusCalendarKing : DecisiveDuelBoss
 	public const string ForgeSwordMoveId = "FORGE_SWORD_MOVE";
 	public const string FlashStepMoveId = "FLASH_STEP_MOVE";
 
-	private const int InitialHpValue = 500;
-	private const int HamstringDamage = 10;
+	private const int InitialHpValue = 600;
+	private const int HamstringDamage = 12;
 	private const int PlayerWeakAmount = 1;
 	private const int NonPlayerWeakAmount = 2;
-	private const int EdictDamage = 30;
+	private const int EdictDamage = 36;
 	private const int ForgeSwordPainfulStabsAmount = 1;
-	private const int FlashStepDamage = 6;
+	private const int FlashStepDamage = 7;
 	private const int FlashStepHits = 3;
 	private const float HamstringHitDelay = 0.8f;
 	private const float PrepareDelay = 0.8f;

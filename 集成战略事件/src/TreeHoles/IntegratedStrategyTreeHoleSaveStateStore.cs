@@ -72,6 +72,7 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 				SpecialFinaleKind.AbyssalJungle => TreeHoleSaveKind.AbyssalJungleFinale,
 				SpecialFinaleKind.AbyssalJungleIsharmla => TreeHoleSaveKind.AbyssalJungleIsharmlaFinale,
 				SpecialFinaleKind.ProphetHornFragment => TreeHoleSaveKind.ProphetHornFragment,
+				SpecialFinaleKind.DesireHall => TreeHoleSaveKind.DesireHallFinale,
 				_ => TreeHoleSaveKind.EndlessFinale
 			};
 
