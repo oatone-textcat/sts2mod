@@ -74,12 +74,24 @@ public static class ModEntry
 
 	private static void RegisterActEvents()
 	{
+		// 与 BaseLib 时代语义对齐：有章节限定的事件进对应章节池，
+		// 其余事件一律进通用池（AllSharedEvents，等价原版滑脚木桥式全局事件）；
+		// 树洞/结局分支/终局专属事件同样在通用池里，由 IsAllowed 门禁阻止自然刷新，
+		// 强制刷新路径不受门禁影响。
 		ModContentRegistry registry = ModContentRegistry.For(ModInfo.ModId);
 		foreach ((Type eventType, Type[] actTypes) in IntegratedStrategyEventSpawnRules.ActRegistrations)
 		{
 			foreach (Type actType in actTypes)
 			{
 				registry.RegisterActEvent(actType, eventType);
+			}
+		}
+
+		foreach (Type eventType in IntegratedStrategyContentCatalog.EventTypes)
+		{
+			if (!IntegratedStrategyEventSpawnRules.ActRegistrations.ContainsKey(eventType))
+			{
+				registry.RegisterSharedEvent(eventType);
 			}
 		}
 	}

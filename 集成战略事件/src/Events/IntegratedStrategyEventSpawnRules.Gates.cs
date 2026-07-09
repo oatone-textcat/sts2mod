@@ -53,6 +53,8 @@ internal static partial class IntegratedStrategyEventSpawnRules
 				IntegratedStrategyTreeHoleController.IsAtProphetHornFragmentEventPoint(state),
 			[typeof(BeginningEvent)] = static runState =>
 				IsSecondActOpeningBranchAvailable(runState),
+			[typeof(LiberationEvent)] = static runState =>
+				IsSecondActOpeningBranchAvailable(runState),
 			[typeof(SublimationEvent)] = static runState =>
 				runState is RunState state &&
 				IntegratedStrategyTreeHoleController.IsAtAbyssalJungleSublimationEventPoint(state),
