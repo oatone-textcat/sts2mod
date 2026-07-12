@@ -1,0 +1,12 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+path="res://IntegratedStrategyEvents/_imported/enemy_2039_syskad.skel.spskel"
+
+[deps]
+
+source_file="res://IntegratedStrategyEvents/animations/monsters/arknights/syskad/enemy_2039_syskad.skel"
+dest_files=["res://IntegratedStrategyEvents/_imported/enemy_2039_syskad.skel.spskel"]
+
+[params]

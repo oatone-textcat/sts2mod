@@ -1,0 +1,15 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+path="res://IntegratedStrategyEvents/_imported/enemy_2042_syboss.atlas.spatlas"
+
+[deps]
+
+source_file="res://IntegratedStrategyEvents/animations/monsters/arknights/syboss/enemy_2042_syboss.atlas"
+dest_files=["res://IntegratedStrategyEvents/_imported/enemy_2042_syboss.atlas.spatlas"]
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"
