@@ -1,3 +1,0 @@
-namespace IntegratedStrategyEvents.Encounters;
-
-internal interface IIzumikEcologicalFountain;

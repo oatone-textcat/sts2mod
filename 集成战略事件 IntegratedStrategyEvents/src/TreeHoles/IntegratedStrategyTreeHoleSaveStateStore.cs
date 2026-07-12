@@ -30,6 +30,7 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 				StartTime = run.StartTime,
 				Kind = snapshot.Kind.ToString(),
 				CurrentActIndex = snapshot.CurrentActIndex,
+				ParentActId = snapshot.ParentActId,
 				CurrentActFloor = snapshot.CurrentActFloor,
 				CurrentMapCoord = snapshot.CurrentMapCoord,
 				OriginalMap = SerializableActMap.FromActMap(snapshot.OriginalMap),
@@ -79,6 +80,7 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 			return new TreeHoleSaveSnapshot(
 				kind,
 				state.CurrentActIndex,
+				state.Act.Id.Entry,
 				state.Map,
 				state.CurrentMapCoord,
 				state.VisitedMapCoords.ToList(),
@@ -98,6 +100,7 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 		return new TreeHoleSaveSnapshot(
 			TreeHoleSaveKind.TreeHole,
 			state.CurrentActIndex,
+			state.Act.Id.Entry,
 			state.Map,
 			state.CurrentMapCoord,
 			state.VisitedMapCoords.ToList(),
@@ -138,6 +141,13 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 			}
 
 			SerializableActModel? originalActSave = state.OriginalActSave;
+			if (originalActSave == null && !string.IsNullOrEmpty(state.ParentActId))
+			{
+				// 幕身份优先按保存的 ActModel ID 精确匹配（第三方模组增删临时幕会使序号漂移）。
+				originalActSave = save.Acts.FirstOrDefault(act =>
+					string.Equals(act.Id.Entry, state.ParentActId, StringComparison.Ordinal));
+			}
+
 			if (originalActSave == null &&
 				state.CurrentActIndex >= 0 &&
 				state.CurrentActIndex < save.Acts.Count)
@@ -153,6 +163,7 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 			return new TreeHoleRestoreSnapshot(
 				kind,
 				state.CurrentActIndex,
+				state.ParentActId ?? string.Empty,
 				state.CurrentActFloor,
 				state.CurrentMapCoord,
 				state.OriginalMap,
@@ -204,6 +215,8 @@ internal static class IntegratedStrategyTreeHoleSaveStateStore
 		public string Kind { get; set; } = string.Empty;
 
 		public int CurrentActIndex { get; set; }
+
+		public string? ParentActId { get; set; }
 
 		public int CurrentActFloor { get; set; }
 

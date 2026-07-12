@@ -61,6 +61,7 @@ internal enum SpecialFinaleKind
 internal sealed record TreeHoleSaveSnapshot(
 	TreeHoleSaveKind Kind,
 	int CurrentActIndex,
+	string ParentActId,
 	ActMap CurrentMap,
 	MapCoord? CurrentMapCoord,
 	IReadOnlyList<MapCoord> CurrentVisitedMapCoords,
@@ -79,6 +80,7 @@ internal sealed record TreeHoleSaveSnapshot(
 internal sealed record TreeHoleRestoreSnapshot(
 	TreeHoleSaveKind Kind,
 	int CurrentActIndex,
+	string ParentActId,
 	int CurrentActFloor,
 	MapCoord? CurrentMapCoord,
 	SerializableActMap OriginalMap,

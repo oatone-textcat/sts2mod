@@ -78,7 +78,20 @@ internal static class TreeHoleRunAccessor
 			return;
 		}
 
-		ActRoomsField.SetValue(state.Act, RoomSet.FromSave(originalActSave.SerializableRooms));
+		// 树洞/终局临时层不切换 Act，层内战斗消耗的是同一个 RoomSet 的遭遇战队列。
+		// 整体回滚快照会把普通/精英遭遇计数一并回卷，导致返回大地图后重复遇到
+		// 层内刚打过的敌人（玩家反馈）。恢复后保留两个战斗计数的较大值；
+		// 事件/BOSS 计数与事件列表仍按快照回滚（层内事件是强制换入的，不占主图轮换）。
+		RoomSet restored = RoomSet.FromSave(originalActSave.SerializableRooms);
+		if (ActRoomsField.GetValue(state.Act) is RoomSet liveRooms)
+		{
+			restored.normalEncountersVisited =
+				Math.Max(restored.normalEncountersVisited, liveRooms.normalEncountersVisited);
+			restored.eliteEncountersVisited =
+				Math.Max(restored.eliteEncountersVisited, liveRooms.eliteEncountersVisited);
+		}
+
+		ActRoomsField.SetValue(state.Act, restored);
 	}
 
 	public static bool TryGetMapPointHistory(

@@ -207,7 +207,12 @@ internal static class TreeHoleSessionManager
 			rebuiltSessionMap = true;
 		}
 
-		if (state.CurrentActIndex != snapshot.CurrentActIndex || !MapContainsCoord(sessionMap, snapshot.TerminalCoord))
+		// 幕身份校验优先按保存的 ActModel ID（第三方模组增删临时幕会使序号漂移），
+		// 旧格式快照无 ID 时回退序号比对。
+		bool actMatches = !string.IsNullOrEmpty(snapshot.ParentActId)
+			? string.Equals(state.Act.Id.Entry, snapshot.ParentActId, StringComparison.Ordinal)
+			: state.CurrentActIndex == snapshot.CurrentActIndex;
+		if (!actMatches || !MapContainsCoord(sessionMap, snapshot.TerminalCoord))
 		{
 			Log.Warn($"{ModInfo.LogPrefix} Ignored stale tree-hole restore snapshot.");
 			SessionStore.RemovePendingRestore(state);

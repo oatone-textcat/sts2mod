@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
 
@@ -16,12 +17,42 @@ internal static partial class IntegratedStrategyEventEffects
 
 	public static Task ObtainRandomRelic(Player owner)
 	{
-		return RelicCmd.Obtain(IntegratedStrategyEventRewards.PullRandomRelic(owner), owner);
+		return ObtainRandomRelicVerified(owner, static o => IntegratedStrategyEventRewards.PullRandomRelic(o));
 	}
 
 	public static Task ObtainRandomRelic(Player owner, RelicRarity rarity)
 	{
-		return RelicCmd.Obtain(IntegratedStrategyEventRewards.PullRandomRelic(owner, rarity), owner);
+		return ObtainRandomRelicVerified(owner, o => IntegratedStrategyEventRewards.PullRandomRelic(o, rarity));
+	}
+
+	// 玩家反馈：个别环境下（疑似第三方模组补丁干扰）随机遗物未实际入账但事件正常收尾。
+	// 这里在发放后核对遗物列表，未入账则重抽一次并留下可定位的日志。
+	private static async Task ObtainRandomRelicVerified(Player owner, Func<Player, RelicModel> pull)
+	{
+		int before = CountLiveRelics(owner);
+		RelicModel relic = pull(owner);
+		await RelicCmd.Obtain(relic, owner);
+		if (CountLiveRelics(owner) > before)
+		{
+			return;
+		}
+
+		Log.Warn(
+			$"{ModInfo.LogPrefix} Random relic reward {relic.Id.Entry} was not added to player " +
+			$"{owner.NetId}; retrying once with a fresh pull.");
+		RelicModel retryRelic = pull(owner);
+		await RelicCmd.Obtain(retryRelic, owner);
+		if (CountLiveRelics(owner) <= before)
+		{
+			Log.Error(
+				$"{ModInfo.LogPrefix} Random relic reward retry {retryRelic.Id.Entry} also failed for " +
+				$"player {owner.NetId}; another mod may be intercepting RelicCmd.Obtain.");
+		}
+	}
+
+	private static int CountLiveRelics(Player owner)
+	{
+		return owner.Relics.Count(static relic => !relic.HasBeenRemovedFromState);
 	}
 
 	public static async Task ObtainRandomRelics(Player owner, int count)

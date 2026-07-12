@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Godot;
 using HarmonyLib;
@@ -337,10 +338,24 @@ internal static class IntegratedStrategySecretMapNodeController
 		return true;
 	}
 
+	private static readonly Assembly VanillaMapAssembly = typeof(ActMap).Assembly;
+	private static readonly Assembly SelfAssembly = typeof(IntegratedStrategySecretMapNodeController).Assembly;
+
 	private static bool ShouldSkipMap(RunState state, ActMap map)
 	{
-		// 秘境节点只出现在正常大地图上；树洞/终局/断章等临时层统一由标记接口+会话判定排除。
-		return IntegratedStrategyTreeHoleController.IsTemporaryMap(state, map);
+		// 秘境节点只出现在正常大地图上：
+		// 1) 本模组的树洞/终局/断章临时层由标记接口+会话判定排除；
+		// 2) 其他模组的脚本化/临时地图类型（非原版、非本模组程序集）默认排除（玩家反馈）；
+		// 3) 其他模组也可通过 IntegratedStrategyEventsInterop.RegisterSecretNodeSkipPredicate 显式声明排除。
+		return IntegratedStrategyTreeHoleController.IsTemporaryMap(state, map) ||
+			IsExternalScriptedMap(map) ||
+			IntegratedStrategyEventsInterop.ShouldSkipSecretNodes(map);
+	}
+
+	private static bool IsExternalScriptedMap(ActMap map)
+	{
+		Assembly mapAssembly = map.GetType().Assembly;
+		return mapAssembly != VanillaMapAssembly && mapAssembly != SelfAssembly;
 	}
 
 	private static HashSet<MapCoord> SelectSecretNodeCoords(RunState state, ActMap map, int actIndex)
